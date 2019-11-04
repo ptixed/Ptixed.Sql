@@ -1,0 +1,105 @@
+﻿using Ptixed.Sql.Meta;
+using Ptixed.Sql.Util;
+using System.Linq;
+
+namespace Ptixed.Sql
+{
+    public static class QueryHelper
+    {
+        public static Query GetById<T>(params object[] ids)
+        {
+            if (ids == null || ids.Length == 0)
+                return null;
+            
+            var table = Table.Get(typeof(T));
+
+            var query = new Query();
+            query.Append($"SELECT * FROM {table} WHERE ");
+            query.Append(Query.Join(" OR ", ids.Select(id => table.GetPrimaryKeyCondition(id))));
+            return query;
+        }
+
+        public static Query Insert<T>(params T[] entities)
+        {
+            if (entities == null || entities.Length == 0)
+                return null;
+            
+            var table = Table.Get(typeof(T));
+            var columns = table.PhysicalColumns.Except(table.AutoIncrementColumn).ToList<PhysicalColumn>();
+
+            var query = new Query();
+            query.Append($"INSERT INTO {table} ({string.Join(", ", columns)}) OUTPUT ");
+            query.Append(Query.Join(", ", table.PhysicalColumns.Select(column =>
+            {
+                return new Query(() => $"INSERTED.{column} ");
+            })));
+            query.Append("VALUES ");
+            query.Append(Query.Join(", ", entities.Select(entity => 
+            {
+                var values = table.ToQuery(columns, entity)
+                    .Select(column => new Query(column.Value))
+                    .ToList();
+
+                var q = new Query();
+                q.Append("(");
+                q.Append(Query.Join(", ", values));
+                q.Append(")");
+                return q;
+            })));
+            return query;
+        }
+
+        public static Query Update(params object[] entities)
+        {
+            if (entities == null || entities.Length == 0)
+                return null;
+            
+            return Query.Join("\n\n", entities.Select(entity =>
+            {
+                var table = Table.Get(entity.GetType());
+                var columns = table.PhysicalColumns.Where(x => !x.IsPrimaryKey).ToList<PhysicalColumn>();
+
+                var values = table.ToQuery(columns, entity)
+                    .Select(column => new Query(() => $"{column} = {column.Value}"))
+                    .ToList();
+                
+                var query = new Query();
+                query.Append($"UPDATE {table} SET ");
+                query.Append(Query.Join(", ", values));
+                query.Append(" WHERE ");
+                query.Append(table.GetPrimaryKeyCondition(table[entity, table.PrimaryKey]));                
+                return query;
+            }));
+        }
+
+        public static Query Delete(params object[] entities)
+        {
+            if (entities == null || entities.Length == 0)
+                return null;
+            
+            return Query.Join("\n\n", entities.Select(entity =>
+            {
+                var table = Table.Get(entity.GetType());
+                var id = table[entity, table.PrimaryKey];
+                
+                var query = new Query();
+                query.Append($"DELETE FROM {table} WHERE ");
+                query.Append(table.GetPrimaryKeyCondition(id));
+                return query;
+            }));
+        }
+
+        public static Query Delete<T>(params object[] ids)
+        {
+            if (ids == null || ids.Length == 0)
+                return null;
+            
+            var table = Table.Get(typeof(T));
+
+            var query = new Query();
+            query.Append($"DELETE FROM {table} WHERE ");
+            query.Append(Query.Join(" OR ", ids.Select(id => table.GetPrimaryKeyCondition(id))));
+            return query;
+        }
+    }
+}

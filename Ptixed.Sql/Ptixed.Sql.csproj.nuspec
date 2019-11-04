@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<package >
+	<metadata>
+		<id>Ptixed.Sql</id>
+		<version>0.2</version>
+		<description>Library for interacting with Microsoft SQL databases</description>
+		<authors>Paweł Krogulec</authors>
+		<tags>ptixed sql tsql database db</tags>
+		<projectUrl>https://github.com/ptixed/Ptixed.Sql</projectUrl>
+		<iconUrl>https://github.com/ptixed/Ptixed.Sql/raw/master/logo-nuget.png</iconUrl>
+		<dependencies>
+			<group targetFramework=".NETFramework4.6">
+				<dependency id="Microsoft.CodeAnalysis.CSharp" version="[1.0.1]" />
+				<dependency id="System.ValueTuple" version="[4.5.0]" />
+			</group>
+		</dependencies>
+		<frameworkAssemblies>
+			<frameworkAssembly assemblyName="System" />
+			<frameworkAssembly assemblyName="System.Data" />
+		</frameworkAssemblies>
+	</metadata>  
+    <files>
+        <file src="bin\Release\Ptixed.Sql.dll" target="lib\net46" />
+    </files>
+</package>
