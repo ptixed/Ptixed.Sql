@@ -2,7 +2,7 @@
 <package >
 	<metadata>
 		<id>Ptixed.Sql</id>
-		<version>0.2</version>
+		<version>0.2.1</version>
 		<description>Library for interacting with Microsoft SQL databases</description>
 		<authors>Paweł Krogulec</authors>
 		<tags>ptixed sql tsql database db</tags>

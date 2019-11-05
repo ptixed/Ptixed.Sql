@@ -36,7 +36,7 @@ namespace Ptixed.Sql.Meta
                 SlotType = member.PropertyType;
                 IsCollection = false;
 
-                var accessor = TypeAccessor.Get(member.PropertyType);
+                var accessor = TypeAccessor.Get(member.DeclaringType);
                 _setter = (self, value) => accessor[self, member] = value.SingleOrDefault();
             }
         }

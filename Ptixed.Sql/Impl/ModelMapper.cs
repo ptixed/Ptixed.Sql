@@ -123,7 +123,13 @@ namespace Ptixed.Sql.Impl
                         relations[rei].index,
                         relations[rei + 1].index - relations[rei].index);
 
-                    relations[rei].relation.SetValue(root, ConstructNode(subts, subrows).ToList());
+                    var nodes = ConstructNode(subts, subrows).ToList();
+                    relations[rei].relation.SetValue(root, nodes);
+
+                    if (Table.Get(subts[0]).Relations.TryGetValue(types[0], out Relation reverse))
+                        foreach (var node in nodes)
+                            reverse.SetValue(node, new List<object> { root });
+
                     yield return root;
                 }
             }

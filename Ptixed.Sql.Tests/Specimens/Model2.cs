@@ -10,5 +10,8 @@ namespace Ptixed.Sql.Tests.Specimens
 
         [Column]
         public int ModelId { get; set; }
+
+        [Relation]
+        public Model Model { get; set; }
     }
 }
