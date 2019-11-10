@@ -26,6 +26,15 @@ namespace Ptixed.Sql
 
         protected virtual Func<object, object> FromDbImpl(Type type)
         {
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                var subconverter = _fromdb.GetOrAdd(type.GetGenericArguments()[0], FromDbImpl);
+                return x => x == null ? null : subconverter(x);
+            }
+
+            if (!type.IsEnum && typeof(IConvertible).IsAssignableFrom(type))
+                return x => ((IConvertible)x).ToType(type, null);
+
             return x => x;
         }
     }

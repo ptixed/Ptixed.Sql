@@ -40,7 +40,7 @@ namespace Ptixed.Sql.Tests
                     }
                 };
 
-                var inserted = db.Insert(model);  
+                var inserted = db.Insert(model);
                 Assert.Equal(model, inserted);
                 Assert.NotEqual(0, model.Id.ClientId);
 
@@ -51,7 +51,7 @@ namespace Ptixed.Sql.Tests
                 Assert.Equal(model.EnumAsInt, selected.EnumAsInt);
                 Assert.Equal(model.EnumAsString, selected.EnumAsString);
                 Assert.Equal(model.SubModel.Id, selected.SubModel.Id);
-                
+
                 model.CreatedAt = new DateTime(2019, 10, 19, 17, 21, 0);
                 db.Update(model);
                 selected = db.GetById<Model>(model.Id);
@@ -107,13 +107,13 @@ namespace Ptixed.Sql.Tests
                         QuestionId = Guid.NewGuid()
                     }
                 };
-                
+
                 using (var tran = db.OpenTransaction(IsolationLevel.Serializable))
                 {
                     db.Insert(model);
                 }
                 Assert.Null(db.GetById<Model>(model.Id));
-                
+
                 using (var tran = db.OpenTransaction(IsolationLevel.Serializable))
                 {
                     db.Insert(model);
@@ -139,6 +139,9 @@ namespace Ptixed.Sql.Tests
 
                 var count = db.Single<int>(() => $"SELECT COUNT(*) FROM Model");
                 Assert.Equal(1, count);
+
+                var countd = db.Single<decimal?>(() => $"SELECT COUNT(*) FROM Model");
+                Assert.Equal(1, countd);
 
                 var now = db.Single<DateTime?>(() => $"SELECT CURRENT_TIMESTAMP");
                 Assert.Equal(DateTime.Now.Date, now.Value.Date);
