@@ -53,9 +53,9 @@ namespace Ptixed.Sql.Util
 
         public Range2<T> GetRange(int offset1, int length1, int offset2, int length2)
         {
-            if (_offset1 + offset1 + length1 > Length1)
+            if (offset1 + length1 > Length1)
                 throw new ArgumentOutOfRangeException();
-            if (_offset2 + offset2 + length2 > Length2)
+            if (offset2 + length2 > Length2)
                 throw new ArgumentOutOfRangeException();
             return new Range2<T>(_array, _offset1 + offset1, length1, _offset2 + offset2, length2);
         }

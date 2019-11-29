@@ -53,8 +53,8 @@ namespace Ptixed.Sql.Impl
 
         public void Dispose()
         {
-            _transaction?.Dispose();
             _result?.Dispose();
+            _transaction?.Dispose();
             if (Connection.IsValueCreated)
                 Connection.Value.Dispose();
         }
@@ -74,7 +74,7 @@ namespace Ptixed.Sql.Impl
 
             var ret = new QueryResult<T>(Config.Mappping, command.ExecuteReader(), types);
             _result = ret;
-            return ret;        
+            return ret;
         }
 
         public IDatabaseTransaction OpenTransaction(IsolationLevel isolation)

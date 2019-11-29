@@ -12,29 +12,31 @@ namespace Ptixed.Sql.Impl
         private readonly MappingConfig _config;
         private readonly SqlDataReader _reader;
         private readonly Type[] _types;
-        private bool _executed;
+        private readonly List<T> _result;
 
         public QueryResult(MappingConfig config, SqlDataReader reader, Type[] types)
         {
             _config = config;
             _reader = reader;
             _types = types.Length > 0 ? types : new[] { typeof(T) };
+
+            try
+            {
+                _result = new List<T>();
+                var enumerator = GetResultEnumerator();
+                while (enumerator.MoveNext())
+                    _result.Add(enumerator.Current);
+            }
+            finally { _reader.Dispose(); }
         }
 
-        public void Dispose()
-        {
-            _executed = true;
-            _reader.Dispose();
-        }
+        public void Dispose() { }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-        public IEnumerator<T> GetEnumerator()
+        public IEnumerator<T> GetEnumerator() => _result.GetEnumerator();
+
+        private IEnumerator<T> GetResultEnumerator()
         {
-            if (_executed)
-                throw PtixedException.ResultAlreadyConsumed();
-
-            _executed = true;
-
             if (_types.Length > 1)
                 return new ModelGraphEnumerator(this);
 

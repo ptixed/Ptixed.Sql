@@ -4,6 +4,7 @@ using Ptixed.Sql.Impl;
 using Ptixed.Sql.Meta;
 using Ptixed.Sql.Util;
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -64,7 +65,7 @@ namespace Ptixed.Sql
 
             var parts = Cache.GetOrAdd(format, f =>
             {
-                var tree = (InterpolatedStringExpressionSyntax)SyntaxFactory.ParseExpression("$\"" + format.Replace("\"", "\\\"") + '"');
+                var tree = (InterpolatedStringExpressionSyntax)SyntaxFactory.ParseExpression("$@\"" + format.Replace("\"", "\\\"") + '"');
                 var ret = new List<Func<Part[][], Part[]>>(tree.Contents.Count);
                 foreach (var i in tree.Contents)
                     switch (i)
@@ -186,20 +187,26 @@ namespace Ptixed.Sql
                 case int i:
                     yield return new Part(i.ToString());
                     break;
-                case IEnumerable<object> ie when !ie.Any():
-                    yield return new Part("(SELECT 0 WHERE 1 = 0)");
+                case string s:
+                    yield return new Part((object)s);
                     break;
-                case IEnumerable<object> ie:
-                    using (var enumerator = ie.GetEnumerator())
+                case IEnumerable ie:
+                    yield return new Part("(");
+                    using (var enumerator = ie.Cast<object>().GetEnumerator())
                     {
-                        enumerator.MoveNext();
-                        yield return new Part(enumerator.Current);
-                        while (enumerator.MoveNext())
+                        if (!enumerator.MoveNext())
+                            yield return new Part("SELECT TOP 0 0");
+                        else
                         {
-                            yield return new Part(", ");
                             yield return new Part(enumerator.Current);
+                            while (enumerator.MoveNext())
+                            {
+                                yield return new Part(", ");
+                                yield return new Part(enumerator.Current);
+                            }
                         }
                     }
+                    yield return new Part(")");
                     break;
                 default:
                     yield return new Part(value);

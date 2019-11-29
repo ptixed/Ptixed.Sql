@@ -82,18 +82,10 @@ namespace Ptixed.Sql.Impl
 
         private static IEnumerable<object> ConstructNode(Range<Type> types, Range2<object> rows)
         {
-            if (types.Length == 1)
-            {
-                foreach (var row in rows)
-                    if (row[0] != null)
-                        yield return row[0];
-                yield break;
-            }
-
             var table = Table.Get(types[0]);
 
-            var relations = new List<(int index, Relation relation)>() { (index: 1, relation: table.Relations[types[1]]) };
-            for (int i = 2; i < types.Length; ++i)
+            var relations = new List<(int index, Relation relation)>();
+            for (int i = 1; i < types.Length; ++i)
                 if (table.Relations.TryGetValue(types[i], out Relation r))
                     relations.Add((i, r));
             relations.Add((types.Length, null));
@@ -102,21 +94,26 @@ namespace Ptixed.Sql.Impl
             object pk = null;
             for (int i = 0; i < rows.Length1; ++i)
             {
-                var newpk = table[rows[i, 0], table.PrimaryKey];
-                if (pk?.Equals(newpk) != true)
+                var row = rows[i, 0];
+                if (row != null)
                 {
-                    pk = newpk;
-                    roots.Add((i, pk));
+                    var newpk = table[row, table.PrimaryKey];
+                    if (pk?.Equals(newpk) != true)
+                    {
+                        pk = newpk;
+                        roots.Add((i, pk));
+                    }
                 }
             }
             roots.Add((rows.Length1, null));
 
-            for (var rei = 0; rei < relations.Count - 1; ++rei)
+            for (int roi = 0; roi < roots.Count - 1; ++roi)
             {
-                var subts = types.GetRange(relations[rei].index, relations[rei + 1].index - relations[rei].index);
-                for (int roi = 0; roi < roots.Count - 1; ++roi)
+                var root = rows[roots[roi].index, 0];
+
+                for (var rei = 0; rei < relations.Count - 1; ++rei)
                 {
-                    var root = rows[roots[roi].index, 0];
+                    var subts = types.GetRange(relations[rei].index, relations[rei + 1].index - relations[rei].index);
                     var subrows = rows.GetRange(
                         roots[roi].index,
                         roots[roi + 1].index - roots[roi].index,
@@ -129,9 +126,9 @@ namespace Ptixed.Sql.Impl
                     if (Table.Get(subts[0]).Relations.TryGetValue(types[0], out Relation reverse))
                         foreach (var node in nodes)
                             reverse.SetValue(node, new List<object> { root });
-
-                    yield return root;
                 }
+
+                yield return root;
             }
         }
     }

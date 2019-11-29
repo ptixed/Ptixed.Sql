@@ -25,7 +25,7 @@ namespace Ptixed.Sql
                 return null;
             
             var table = Table.Get(typeof(T));
-            var columns = table.PhysicalColumns.Except(table.AutoIncrementColumn).ToList<PhysicalColumn>();
+            var columns = table.PhysicalColumns.Except(new[] { table.AutoIncrementColumn }).ToList<PhysicalColumn>();
 
             var query = new Query();
             query.Append($"INSERT INTO {table} ({string.Join(", ", columns)}) OUTPUT ");

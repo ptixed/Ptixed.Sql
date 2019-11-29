@@ -43,7 +43,7 @@ namespace Ptixed.Sql.Util
 
         public Range<T> GetRange(int offset, int length)
         {
-            if (_offset + offset + length > Length)
+            if (offset + length > Length)
                 throw new ArgumentOutOfRangeException();
             return new Range<T>(_array, _offset + offset, length);
         }

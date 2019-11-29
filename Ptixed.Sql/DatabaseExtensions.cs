@@ -11,8 +11,17 @@ namespace Ptixed.Sql
         public static List<T> ToList<T>(this IDatabase db, Expression<Func<FormattableString>> expression)
             => db.Query<T>(new Query(expression)).ToList();
 
+        public static List<T> ToList<T>(this IDatabase db, Expression<Func<FormattableString>> expression, params Type[] types)
+            => db.Query<T>(new Query(expression), types).ToList();
+
         public static T Single<T>(this IDatabase db, Expression<Func<FormattableString>> expression)
             => db.Query<T>(new Query(expression)).Single();
+
+        public static T SingleOrDefault<T>(this IDatabase db, Expression<Func<FormattableString>> expression)
+            => db.Query<T>(new Query(expression)).SingleOrDefault();
+
+        public static T FirstOrDefault<T>(this IDatabase db, Expression<Func<FormattableString>> expression)
+            => db.Query<T>(new Query(expression)).FirstOrDefault();
 
         public static void NonQuery(this IDatabase db, Expression<Func<FormattableString>> expression)
             => db.NonQuery(new Query(expression));

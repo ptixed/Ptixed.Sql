@@ -71,7 +71,7 @@ namespace Ptixed.Sql.Meta
             il.Emit(value);
             il.Emit(OpCodes.Call, typeof(Enumerable).GetMethod(nameof(Enumerable.Cast)).MakeGenericMethod(undertype));
             il.Emit(OpCodes.Newobj, property.PropertyType.GetConstructor(new [] { typeof(IEnumerable<>).MakeGenericType(undertype) }));
-            il.Emit(OpCodes.Callvirt, property.GetSetMethod());
+            il.Emit(OpCodes.Callvirt, property.SetMethod);
             il.Emit(OpCodes.Ret);
 
             return (Action<object, List<object>>)setter.CreateDelegate(typeof(Action<object, List<object>>));

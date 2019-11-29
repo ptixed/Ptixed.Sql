@@ -109,7 +109,7 @@ namespace Ptixed.Sql.Impl
                         il.Emit(self);
                         il.Emit(value);
                         il.Emit(pi.PropertyType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, pi.PropertyType);
-                        il.Emit(OpCodes.Callvirt, pi.GetSetMethod());
+                        il.Emit(OpCodes.Callvirt, pi.SetMethod);
                         break;
                     case PropertyInfo pi:
                         break;
@@ -131,7 +131,7 @@ namespace Ptixed.Sql.Impl
 
         private static Func<object> CreateCreateNew(Type type)
         {
-            var ctor = type.GetConstructor(Array.Empty<Type>());
+            var ctor = type.GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null);
             if (ctor == null)
                 return null;
 

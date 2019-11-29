@@ -2,9 +2,9 @@
 <package >
 	<metadata>
 		<id>Ptixed.Sql</id>
-		<version>0.2.1</version>
+		<version>0.3</version>
 		<description>Library for interacting with Microsoft SQL databases</description>
-		<authors>Paweł Krogulec</authors>
+		<authors></authors>
 		<tags>ptixed sql tsql database db</tags>
 		<projectUrl>https://github.com/ptixed/Ptixed.Sql</projectUrl>
 		<iconUrl>https://github.com/ptixed/Ptixed.Sql/raw/master/logo-nuget.png</iconUrl>
