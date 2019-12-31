@@ -10,12 +10,14 @@ namespace Ptixed.Sql.Meta
         public readonly PhysicalColumn[] PhysicalColumns;
         public readonly PropertyInfo Member;
         public readonly ISqlConverter Converter;
+        public readonly string Name;
 
         private LogicalColumn(Table table, PropertyInfo member, ColumnAttribute column, ISqlConverter converter)
         {
             Table = table;
             Member = member;
             Converter = converter;
+            Name = member.Name.Split('.').Last();
 
             if (Converter != null)
             {
@@ -25,7 +27,7 @@ namespace Ptixed.Sql.Meta
             }
 
             if (PhysicalColumns == null)
-                PhysicalColumns = new[] { new PhysicalColumn(this, column?.ColumnName ?? member.Name, column?.IsAutoIncrement ?? false) };
+                PhysicalColumns = new[] { new PhysicalColumn(this, column?.ColumnName ?? Name, column?.IsAutoIncrement ?? false) };
         }
 
         public static LogicalColumn TryCreate(Table table, PropertyInfo member)

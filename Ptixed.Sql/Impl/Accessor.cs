@@ -45,7 +45,7 @@ namespace Ptixed.Sql.Impl
                 {
                     typeof(object),
                     typeof(int),
-                }, type, true);
+                }, type.Module, true);
             var il = getter.GetILGenerator();
 
             var labels = members.Select(x => il.DefineLabel()).ToArray();
@@ -61,7 +61,7 @@ namespace Ptixed.Sql.Impl
                 {
                     case PropertyInfo pi:
                         //il.Emit(pi.PropertyType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, pi.PropertyType);
-                        il.Emit(OpCodes.Callvirt, pi.GetGetMethod());
+                        il.Emit(OpCodes.Callvirt, pi.GetMethod);
                         if (pi.PropertyType.IsValueType)
                             il.Emit(OpCodes.Box, pi.PropertyType);
                         break;
@@ -91,7 +91,7 @@ namespace Ptixed.Sql.Impl
                     typeof(object),
                     typeof(int),
                     typeof(object),
-                }, type, true);
+                }, type.Module, true);
             var il = setter.GetILGenerator();
 
             var labels = members.Select(x => il.DefineLabel()).ToArray();
@@ -135,7 +135,7 @@ namespace Ptixed.Sql.Impl
             if (ctor == null)
                 return null;
 
-            var createnew = new DynamicMethod(type.FullName + "_new", typeof(object), Array.Empty<Type>(), type, true);
+            var createnew = new DynamicMethod(type.FullName + "_new", typeof(object), Array.Empty<Type>(), type.Module, true);
             var il = createnew.GetILGenerator();
 
             il.Emit(OpCodes.Newobj, ctor);

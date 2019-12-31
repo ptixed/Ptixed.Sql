@@ -33,7 +33,9 @@ namespace Ptixed.Sql
             }
 
             if (!type.IsEnum && typeof(IConvertible).IsAssignableFrom(type))
-                return x => ((IConvertible)x)?.ToType(type, null);
+                return x => x == null || x.GetType() == type
+                    ? x
+                    : (x is IConvertible c ? c.ToType(type, null) : ((IConvertible)x.ToString()).ToType(type, null));
 
             return x => x;
         }

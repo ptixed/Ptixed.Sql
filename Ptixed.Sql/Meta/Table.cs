@@ -46,7 +46,7 @@ namespace Ptixed.Sql.Meta
             Name = attr?.TableName ?? type.Name;
             if (attr?.PkColumn != null)
             {
-                PrimaryKey = LogicalColumns.FirstOrDefault(x => x.Member.Name == attr.PkColumn);
+                PrimaryKey = LogicalColumns.SingleOrDefault(x => x.Name == attr.PkColumn);
                 if (PrimaryKey == null)
                     throw PtixedException.InvalidColumnName(attr.PkColumn);
             }
