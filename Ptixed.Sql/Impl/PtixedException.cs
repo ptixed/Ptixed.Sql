@@ -1,5 +1,4 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System;
+﻿using System;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -17,9 +16,6 @@ namespace Ptixed.Sql.Impl
         
         public static Exception InvalidExpression(Expression expresssion) 
             => new PtixedException("Query was not in valid format", expresssion);
-
-        public static Exception InvalidExpression(InterpolatedStringContentSyntax syntax) 
-            => new PtixedException("Query was not in valid format", syntax);
 
         public static Exception InvalidExpression(MemberInfo member) 
             => new PtixedException("Query was not in valid format", member);

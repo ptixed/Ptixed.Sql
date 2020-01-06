@@ -1,99 +1,31 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Ptixed.Sql.Impl;
-using Ptixed.Sql.Meta;
-using Ptixed.Sql.Util;
+﻿using Ptixed.Sql.Meta;
 using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
 
 namespace Ptixed.Sql
 {
     public class Query
     {
-        private class Part
-        {
-            public readonly string Text;
-            public readonly object Parameter;
-            public readonly bool IsParameter;
-
-            public Part(string text)
-            {
-                Text = text;
-                IsParameter = false;
-            }
-
-            public Part(object parameter)
-            {
-                Parameter = parameter;
-                IsParameter = true;
-            }
-
-            public override string ToString()
-            {
-                if (IsParameter)
-                    return "P " + Parameter;
-                return "T " + Text;
-            }
-        }
-
-        private static readonly ConcurrentDictionary<string, List<Func<Part[][], Part[]>>> Cache = new ConcurrentDictionary<string, List<Func<Part[][], Part[]>>>();
-
-        private readonly List<Part> _parts =  new List<Part>();
+        private readonly List<FormattableString> _parts =  new List<FormattableString>();
         public bool IsEmpty => _parts.Count == 0;
 
         public Query() { }
-        public Query(string text) => Append(text);
-        public Query(Expression<Func<FormattableString>> expression) => Append(expression);
+        public Query(FormattableString query) => Append(query);
         public Query(object parameter) => Append(parameter);
 
-        public Query Append(string text)
+        public Query Append(FormattableString query)
         {
-            _parts.Add(new Part(text));
-            return this;
-        }   
-
-        public Query Append(Expression<Func<FormattableString>> expression)
-        {
-            var body = (MethodCallExpression)expression.Body;
-            var format = (string)((ConstantExpression)body.Arguments[0]).Value;
-
-            var parts = Cache.GetOrAdd(format, f =>
-            {
-                var tree = (InterpolatedStringExpressionSyntax)SyntaxFactory.ParseExpression("$@\"" + format.Replace("\"", "\\\"") + '"');
-                var ret = new List<Func<Part[][], Part[]>>(tree.Contents.Count);
-                foreach (var i in tree.Contents)
-                    switch (i)
-                    {
-                        case InterpolatedStringTextSyntax i0:
-                            var text = new[] { new Part(i0.TextToken.Text) };
-                            ret.Add(_ => text);
-                            break;
-                        case InterpolationSyntax i1 when i1.Expression is LiteralExpressionSyntax i11:
-                            if (i1.AlignmentClause != null || i1.FormatClause != null)
-                                throw PtixedException.InvalidExpression(i1);
-                            ret.Add(parameters => parameters[(int)i11.Token.Value]);
-                            break;
-                        default:
-                            throw PtixedException.InvalidExpression(i);
-                    }
-                return ret;
-            });
-             
-            var ps = ((NewArrayExpression)body.Arguments[1]).Expressions.Select(x => FormatExpression(x).ToArray()).ToArray();
-
-            _parts.AddRange(parts.SelectMany(x => x(ps)));
+            _parts.Add(query);
             return this;
         }   
         
         public Query Append(object parameter)
         {
-            _parts.Add(new Part(parameter));
+            _parts.Add($"{parameter}");
             return this;
         }
         
@@ -120,98 +52,79 @@ namespace Ptixed.Sql
 
         public SqlCommand ToSql(SqlCommand command, MappingConfig mapping)
         {
+            var index = 0;
+            return ToSql(ref index, command, mapping);
+        }
+
+        private SqlCommand ToSql(ref int index, SqlCommand command, MappingConfig mapping)
+        {
+            void AddParameter(int i, object value)
+            {
+                var dbvalue = mapping.ToDb(value?.GetType(), value);
+                var parameter = dbvalue as SqlParameter ?? new SqlParameter { Value = value };
+                parameter.ParameterName = i.ToString();
+                command.Parameters.Add(parameter);
+            }
+
             var sb = new StringBuilder();
-            var i = 0;
             foreach (var part in _parts)
-                if (part.IsParameter)
-                {
-                    sb.Append('@').Append(i);
-
-                    var value = mapping.ToDb(part.Parameter?.GetType(), part.Parameter);
-                    var parameter = value as SqlParameter ?? new SqlParameter { Value = value };
-                    parameter.ParameterName = i.ToString();
-                    command.Parameters.Add(parameter);
-
-                    i++;
-                }
-                else
-                    sb.Append(part.Text);
-
-            command.CommandText = sb.ToString();
-
-            return command;
-        }
-
-        private IEnumerable<Part> FormatExpression(Expression expression)
-        {
-            switch (expression)
             {
-                case ConstantExpression ce:
-                    return FormatValue(ce.Value);
-                case MemberExpression me:
-                    return FormatMember(me);
-                case UnaryExpression ue:
-                    return FormatExpression(ue.Operand);
-                default:
-                    throw PtixedException.InvalidExpression(expression);
-            }
-        }
-
-        private IEnumerable<Part> FormatMember(MemberExpression expr)
-        {
-            var owner = Reflection.Execute(expr.Expression);
-            var value = Reflection.GetValue(expr.Member, owner);
-            return FormatValue(value);
-        }
-
-        private IEnumerable<Part> FormatValue(object value)
-        {
-            switch (value)
-            {
-                case null:
-                    yield return new Part("NULL");
-                    break;
-                case Query q:
-                    foreach (var part in q._parts)
-                        yield return part;
-                    break;
-                case Table tm:
-                    yield return new Part(tm.ToString());
-                    break;
-                case PhysicalColumn pc:
-                    yield return new Part(pc.ToString());
-                    break;
-                case ColumnValue cv:
-                    yield return new Part(cv.ToString());
-                    break;
-                case int i:
-                    yield return new Part(i.ToString());
-                    break;
-                case string s:
-                    yield return new Part((object)s);
-                    break;
-                case IEnumerable ie:
-                    yield return new Part("(");
-                    using (var enumerator = ie.Cast<object>().GetEnumerator())
+                var formants = new List<object>();
+                foreach (var argument in part.GetArguments())
+                    switch (argument)
                     {
-                        if (!enumerator.MoveNext())
-                            yield return new Part("SELECT TOP 0 0");
-                        else
-                        {
-                            yield return new Part(enumerator.Current);
-                            while (enumerator.MoveNext())
+                        case null:
+                            formants.Add("NULL");
+                            break;
+                        case Query q:
+                            q.ToSql(ref index, command, mapping);
+                            break;
+                        case Table tm:
+                            formants.Add(tm.ToString());
+                            break;
+                        case PhysicalColumn pc:
+                            formants.Add(pc.ToString());
+                            break;
+                        case ColumnValue cv:
+                            formants.Add(cv.ToString());
+                            break;
+                        case int i:
+                            formants.Add(i.ToString());
+                            break;
+                        case string s:
+                            AddParameter(index, s);
+                            formants.Add(index++.ToString());
+                            break;
+                        case IEnumerable ie:
+                            var sb1 = new StringBuilder("(");
+                            using (var enumerator = ie.Cast<object>().GetEnumerator())
                             {
-                                yield return new Part(", ");
-                                yield return new Part(enumerator.Current);
+                                if (!enumerator.MoveNext())
+                                    sb.Append("SELECT TOP 0 0");
+                                else
+                                {
+                                    AddParameter(index, enumerator.Current);
+                                    sb1.Append(index++.ToString());
+                                    while (enumerator.MoveNext())
+                                    {
+                                        sb1.Append(", ");
+                                        AddParameter(index, enumerator.Current);
+                                        sb1.Append(index++.ToString());
+                                    }
+                                }
                             }
-                        }
+                            sb1.Append(")");
+                            formants.Add(sb1.ToString());
+                            break;
+                        default:
+                            AddParameter(index, argument);
+                            formants.Add(index++.ToString());
+                            break;
                     }
-                    yield return new Part(")");
-                    break;
-                default:
-                    yield return new Part(value);
-                    break;
+                sb.Append(string.Format(part.Format, formants.ToArray()));                
             }
+            command.CommandText += sb.ToString();
+            return command;
         }
     }
 }

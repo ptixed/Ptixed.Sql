@@ -73,7 +73,7 @@ namespace Ptixed.Sql.Meta
         {
             var query = new Query();
             query.Append("(");
-            query.Append(Query.Join(" AND ", PrimaryKey.FromValueToQuery(o).Select(column => new Query(() => $"{column} = {column.Value}"))));
+            query.Append(Query.Join(" AND ", PrimaryKey.FromValueToQuery(o).Select(column => new Query($"{column} = {column.Value}"))));
             query.Append(")");
             return query;
         }

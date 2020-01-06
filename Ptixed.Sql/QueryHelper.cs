@@ -31,7 +31,7 @@ namespace Ptixed.Sql
             query.Append($"INSERT INTO {table} ({string.Join(", ", columns)}) OUTPUT ");
             query.Append(Query.Join(", ", table.PhysicalColumns.Select(column =>
             {
-                return new Query(() => $"INSERTED.{column} ");
+                return new Query($"INSERTED.{column} ");
             })));
             query.Append("VALUES ");
             query.Append(Query.Join(", ", entities.Select(entity => 
@@ -60,7 +60,7 @@ namespace Ptixed.Sql
                 var columns = table.PhysicalColumns.Where(x => !x.IsPrimaryKey).ToList<PhysicalColumn>();
 
                 var values = table.ToQuery(columns, entity)
-                    .Select(column => new Query(() => $"{column} = {column.Value}"))
+                    .Select(column => new Query($"{column} = {column.Value}"))
                     .ToList();
                 
                 var query = new Query();
