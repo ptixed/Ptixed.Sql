@@ -42,6 +42,13 @@ namespace Ptixed.Sql.Meta
             if (ignore != null || relation != null)
                 return null;
 
+            if (column == null)
+            {
+                var ispublic = member.GetGetMethod() != null || member.GetSetMethod() != null;
+                if (!ispublic)
+                    return null;
+            }
+
             return new LogicalColumn(table, member, column, converter?.CreateConverter());
         }
 
