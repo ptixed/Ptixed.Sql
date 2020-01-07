@@ -1,6 +1,5 @@
-﻿using Ptixed.Sql.Meta;
-using Ptixed.Sql.Util;
-using System.Linq;
+﻿using System.Linq;
+using Ptixed.Sql.Meta;
 
 namespace Ptixed.Sql
 {
@@ -15,7 +14,7 @@ namespace Ptixed.Sql
 
             var query = new Query();
             query.Append($"SELECT * FROM {table} WHERE ");
-            query.Append(Query.Join(" OR ", ids.Select(id => table.GetPrimaryKeyCondition(id))));
+            query.Append($" OR ", ids.Select(id => table.GetPrimaryKeyCondition(id)));
             return query;
         }
 
@@ -28,24 +27,23 @@ namespace Ptixed.Sql
             var columns = table.PhysicalColumns.Except(new[] { table.AutoIncrementColumn }).ToList<PhysicalColumn>();
 
             var query = new Query();
-            query.Append($"INSERT INTO {table} ({string.Join(", ", columns)}) OUTPUT ");
-            query.Append(Query.Join(", ", table.PhysicalColumns.Select(column =>
-            {
-                return new Query($"INSERTED.{column} ");
-            })));
-            query.Append("VALUES ");
-            query.Append(Query.Join(", ", entities.Select(entity => 
+            query.Append($"INSERT INTO {table} (");
+            query.Append($", ", columns.Select(x => new Query($"{x}")));
+            query.Append($") OUTPUT ");
+            query.Append($", ", table.PhysicalColumns.Select(column => new Query($"INSERTED.{column}")));
+            query.Append($"VALUES ");
+            query.Append($", ", entities.Select(entity => 
             {
                 var values = table.ToQuery(columns, entity)
-                    .Select(column => new Query(column.Value))
+                    .Select(column => new Query($"{column.Value}"))
                     .ToList();
 
                 var q = new Query();
-                q.Append("(");
-                q.Append(Query.Join(", ", values));
-                q.Append(")");
+                q.Append($"(");
+                q.Append($", ", values);
+                q.Append($")");
                 return q;
-            })));
+            }));
             return query;
         }
 
@@ -54,7 +52,7 @@ namespace Ptixed.Sql
             if (entities == null || entities.Length == 0)
                 return null;
             
-            return Query.Join("\n\n", entities.Select(entity =>
+            return Query.Join($"\n\n", entities.Select(entity =>
             {
                 var table = Table.Get(entity.GetType());
                 var columns = table.PhysicalColumns.Where(x => !x.IsPrimaryKey).ToList<PhysicalColumn>();
@@ -65,8 +63,8 @@ namespace Ptixed.Sql
                 
                 var query = new Query();
                 query.Append($"UPDATE {table} SET ");
-                query.Append(Query.Join(", ", values));
-                query.Append(" WHERE ");
+                query.Append($", ", values);
+                query.Append($" WHERE ");
                 query.Append(table.GetPrimaryKeyCondition(table[entity, table.PrimaryKey]));                
                 return query;
             }));
@@ -77,7 +75,7 @@ namespace Ptixed.Sql
             if (entities == null || entities.Length == 0)
                 return null;
             
-            return Query.Join("\n\n", entities.Select(entity =>
+            return Query.Join($"\n\n", entities.Select(entity =>
             {
                 var table = Table.Get(entity.GetType());
                 var id = table[entity, table.PrimaryKey];
@@ -98,7 +96,7 @@ namespace Ptixed.Sql
 
             var query = new Query();
             query.Append($"DELETE FROM {table} WHERE ");
-            query.Append(Query.Join(" OR ", ids.Select(id => table.GetPrimaryKeyCondition(id))));
+            query.Append($" OR ", ids.Select(id => table.GetPrimaryKeyCondition(id)));
             return query;
         }
     }

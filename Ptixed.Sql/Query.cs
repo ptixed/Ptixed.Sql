@@ -15,17 +15,10 @@ namespace Ptixed.Sql
 
         public Query() { }
         public Query(FormattableString query) => Append(query);
-        public Query(object parameter) => Append(parameter);
 
         public Query Append(FormattableString query)
         {
             _parts.Add(query);
-            return this;
-        }   
-        
-        public Query Append(object parameter)
-        {
-            _parts.Add($"{parameter}");
             return this;
         }
         
@@ -33,9 +26,11 @@ namespace Ptixed.Sql
         {
             _parts.AddRange(query._parts);
             return this;
-        }  
-        
-        public static Query Join(string separator, IEnumerable<Query> parts)
+        }
+
+        public Query Append(FormattableString separator, IEnumerable<Query> parts) => Append(Join(separator, parts));
+
+        public static Query Join(FormattableString separator, IEnumerable<Query> parts)
         {
             var query = new Query();
             using (var e = parts.GetEnumerator())
@@ -93,7 +88,7 @@ namespace Ptixed.Sql
                             break;
                         case string s:
                             AddParameter(index, s);
-                            formants.Add(index++.ToString());
+                            formants.Add("@" + index++.ToString());
                             break;
                         case IEnumerable ie:
                             var sb1 = new StringBuilder("(");
@@ -104,12 +99,12 @@ namespace Ptixed.Sql
                                 else
                                 {
                                     AddParameter(index, enumerator.Current);
-                                    sb1.Append(index++.ToString());
+                                    sb1.Append("@" + index++.ToString());
                                     while (enumerator.MoveNext())
                                     {
                                         sb1.Append(", ");
                                         AddParameter(index, enumerator.Current);
-                                        sb1.Append(index++.ToString());
+                                        sb1.Append("@" + index++.ToString());
                                     }
                                 }
                             }
@@ -118,7 +113,7 @@ namespace Ptixed.Sql
                             break;
                         default:
                             AddParameter(index, argument);
-                            formants.Add(index++.ToString());
+                            formants.Add("@" + index++.ToString());
                             break;
                     }
                 sb.Append(string.Format(part.Format, formants.ToArray()));                

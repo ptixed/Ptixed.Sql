@@ -19,7 +19,7 @@ namespace Ptixed.Sql.Tests
         public void Dispose()
         {
             using (var db = _db.OpenConnection())
-                db.NonQuery(() => $"DELETE FROM Model");
+                db.NonQuery($"DELETE FROM Model");
         }
 
         [Fact]
@@ -137,16 +137,16 @@ namespace Ptixed.Sql.Tests
                 };
                 db.Insert(model);
 
-                var count = db.Single<int>(() => $"SELECT COUNT(*) FROM Model");
+                var count = db.Single<int>($"SELECT COUNT(*) FROM Model");
                 Assert.Equal(1, count);
 
-                var countd = db.Single<decimal?>(() => $"SELECT COUNT(*) FROM Model");
+                var countd = db.Single<decimal?>($"SELECT COUNT(*) FROM Model");
                 Assert.Equal(1, countd);
 
-                var now = db.Single<DateTime?>(() => $"SELECT CURRENT_TIMESTAMP");
+                var now = db.Single<DateTime?>($"SELECT CURRENT_TIMESTAMP");
                 Assert.Equal(DateTime.Now.Date, now.Value.Date);
 
-                var str = db.Single<string>(() => $"SELECT SomeConstant FROM Model");
+                var str = db.Single<string>($"SELECT SomeConstant FROM Model");
                 Assert.Equal(model.SomeConstant, str);
             }
         }
@@ -168,14 +168,14 @@ namespace Ptixed.Sql.Tests
 
                 var inserted = db.Insert(model);
 
-                var selected = db.Single<Model>(() => $"SELECT * FROM Model");
+                var selected = db.Single<Model>($"SELECT * FROM Model");
                 Assert.Equal(model.QuestionId, selected.Id.QuestionId);
                 Assert.Equal(model.CreatedAt, selected.CreatedAt);
                 Assert.Equal(model.EnumAsInt, selected.EnumAsInt);
                 Assert.Equal(model.EnumAsString, selected.EnumAsString);
                 Assert.Equal(model.SubModel.Id, selected.SubModel.Id);
 
-                var selected2 = db.Single<ModelWithNoPk>(() => $"SELECT * FROM Model");
+                var selected2 = db.Single<ModelWithNoPk>($"SELECT * FROM Model");
                 Assert.Equal(model.QuestionId, selected2.QuestionId);
                 Assert.Equal(model.CreatedAt, selected2.CreatedAt);
                 Assert.Equal(model.EnumAsInt, selected2.EnumAsInt);
@@ -202,7 +202,7 @@ namespace Ptixed.Sql.Tests
                 };
                 db.Insert(model);
 
-                var read1 = db.Single<IDictionary<string, object>>(() => $"SELECT * FROM Model");
+                var read1 = db.Single<IDictionary<string, object>>($"SELECT * FROM Model");
                 Assert.Equal(model.Id.ClientId, read1["client"]);
             }
         }
@@ -228,7 +228,7 @@ namespace Ptixed.Sql.Tests
                     ModelId = model.Id.ClientId
                 });
 
-                var (selected, count) = db.Single<(Model, int)>(() => $"SELECT *, (SELECT COUNT(*) FROM Model2 WHERE Model2.ModelId = Model.client) c FROM Model");
+                var (selected, count) = db.Single<(Model, int)>($"SELECT *, (SELECT COUNT(*) FROM Model2 WHERE Model2.ModelId = Model.client) c FROM Model");
 
                 Assert.Equal(model.Id.ClientId, selected.Id.ClientId);
                 Assert.Equal(model.Id.QuestionId, selected.Id.QuestionId);

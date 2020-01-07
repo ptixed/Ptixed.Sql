@@ -64,7 +64,7 @@ namespace Ptixed.Sql.Impl
             if (query.Length == 0)
                 return;
 
-            var command = query.Aggregate((x, y) => x.Append("\n\n").Append(y)).ToSql(NewCommand(), Config.Mappping);
+            var command = query.Aggregate((x, y) => x.Append($"\n\n").Append(y)).ToSql(NewCommand(), Config.Mappping);
             command.ExecuteNonQuery();
         }
 

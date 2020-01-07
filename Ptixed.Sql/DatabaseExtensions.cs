@@ -8,23 +8,23 @@ namespace Ptixed.Sql
 {
     public static class DatabaseExtensions
     {
-        public static List<T> ToList<T>(this IDatabase db, Expression<Func<FormattableString>> expression)
-            => db.Query<T>(new Query(expression)).ToList();
+        public static List<T> ToList<T>(this IDatabase db, FormattableString query)
+            => db.Query<T>(new Query(query)).ToList();
 
-        public static List<T> ToList<T>(this IDatabase db, Expression<Func<FormattableString>> expression, params Type[] types)
-            => db.Query<T>(new Query(expression), types).ToList();
+        public static List<T> ToList<T>(this IDatabase db, FormattableString query, params Type[] types)
+            => db.Query<T>(new Query(query), types).ToList();
 
-        public static T Single<T>(this IDatabase db, Expression<Func<FormattableString>> expression)
-            => db.Query<T>(new Query(expression)).Single();
+        public static T Single<T>(this IDatabase db, FormattableString query)
+            => db.Query<T>(new Query(query)).Single();
 
-        public static T SingleOrDefault<T>(this IDatabase db, Expression<Func<FormattableString>> expression)
-            => db.Query<T>(new Query(expression)).SingleOrDefault();
+        public static T SingleOrDefault<T>(this IDatabase db, FormattableString query)
+            => db.Query<T>(new Query(query)).SingleOrDefault();
 
-        public static T FirstOrDefault<T>(this IDatabase db, Expression<Func<FormattableString>> expression)
-            => db.Query<T>(new Query(expression)).FirstOrDefault();
+        public static T FirstOrDefault<T>(this IDatabase db, FormattableString query)
+            => db.Query<T>(new Query(query)).FirstOrDefault();
 
-        public static void NonQuery(this IDatabase db, Expression<Func<FormattableString>> expression)
-            => db.NonQuery(new Query(expression));
+        public static void NonQuery(this IDatabase db, FormattableString query)
+            => db.NonQuery(new Query(query));
         
         public static List<T> GetByIds<T>(this IDatabase db, params object[] ids)
         {

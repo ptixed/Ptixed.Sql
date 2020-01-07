@@ -72,9 +72,9 @@ namespace Ptixed.Sql.Meta
         public Query GetPrimaryKeyCondition(object o)
         {
             var query = new Query();
-            query.Append("(");
-            query.Append(Query.Join(" AND ", PrimaryKey.FromValueToQuery(o).Select(column => new Query($"{column} = {column.Value}"))));
-            query.Append(")");
+            query.Append($"(");
+            query.Append($" AND ", PrimaryKey.FromValueToQuery(o).Select(column => new Query($"{column} = {column.Value}")));
+            query.Append($")");
             return query;
         }
 
