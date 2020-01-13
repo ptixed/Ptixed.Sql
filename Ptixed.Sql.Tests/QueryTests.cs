@@ -91,7 +91,7 @@ namespace Ptixed.Sql.Tests
 
                 var q2 = new Query($@"SELECT m.*, m2.* FROM Model m LEFT JOIN Model2 m2 ON m2.ModelId = -1 WHERE m.client = {model.Id.ClientId}");
                 var read2 = db.Query<Model>(q2, typeof(Model), typeof(Model2)).Single();
-                Assert.Equal(0, read2.Related2.Count);
+                Assert.Empty(read2.Related2);
             }
         }
 

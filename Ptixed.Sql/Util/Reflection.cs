@@ -32,6 +32,6 @@ namespace Ptixed.Sql.Util
                 default:
                     throw PtixedException.InvalidExpression(expr);
             }
-        }        
+        }
     }
 }
