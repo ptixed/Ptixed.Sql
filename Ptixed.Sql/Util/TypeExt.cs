@@ -28,9 +28,10 @@ namespace Ptixed.Sql.Util
                 .FirstOrDefault(x => x.GetParameters().Select(y => y.ParameterType).SequenceEqual(types));
         }
 
-        public static T GetCustomAttribute<T>(this Type self)
+        public static T GetCustomAttribute<T>(this Type self) where T : Attribute
         {
-            return self.GetTypeInfo().CustomAttributes.OfType<T>().SingleOrDefault();
+            // this explicit extension method call is here to avoid infitine recurrence in .net
+            return CustomAttributeExtensions.GetCustomAttribute<T>(self.GetTypeInfo());
         }
 
         public static List<FieldInfo> GetFields(this Type self)

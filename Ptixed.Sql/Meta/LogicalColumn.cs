@@ -44,7 +44,7 @@ namespace Ptixed.Sql.Meta
 
             if (column == null)
             {
-                var ispublic = member.GetGetMethod() != null || member.GetSetMethod() != null;
+                var ispublic = member.GetMethod?.IsPublic == true || member.SetMethod?.IsPublic == true;
                 if (!ispublic)
                     return null;
             }
