@@ -11,7 +11,6 @@ namespace Ptixed.Sql
     public class Query
     {
         private readonly List<FormattableString> _parts =  new List<FormattableString>();
-        public bool IsEmpty => _parts.Count == 0;
 
         public Query() { }
         public Query(FormattableString query) => Append(query);
@@ -48,12 +47,10 @@ namespace Ptixed.Sql
         public SqlCommand ToSql(SqlCommand command, MappingConfig mapping)
         {
             var index = 0;
-            return ToSql(ref index, command, mapping);
-        }
+            var (text, values) = ToSql(ref index, mapping);
 
-        private SqlCommand ToSql(ref int index, SqlCommand command, MappingConfig mapping)
-        {
-            void AddParameter(int i, object value)
+            command.CommandText = text;
+            foreach (var (value, i) in values.Select((x, i) => (x, i)))
             {
                 var dbvalue = mapping.ToDb(value?.GetType(), value);
                 var parameter = dbvalue as SqlParameter ?? new SqlParameter { Value = value };
@@ -61,7 +58,13 @@ namespace Ptixed.Sql
                 command.Parameters.Add(parameter);
             }
 
+            return command;
+        }
+
+        private (string, List<object>) ToSql(ref int index, MappingConfig mapping)
+        {
             var sb = new StringBuilder();
+            var values = new List<object>();
             foreach (var part in _parts)
             {
                 var formants = new List<object>();
@@ -72,7 +75,9 @@ namespace Ptixed.Sql
                             formants.Add("NULL");
                             break;
                         case Query q:
-                            q.ToSql(ref index, command, mapping);
+                            var (text, vs) = q.ToSql(ref index, mapping);
+                            values.AddRange(vs);
+                            formants.Add(text);
                             break;
                         case Table tm:
                             formants.Add(tm.ToString());
@@ -87,7 +92,7 @@ namespace Ptixed.Sql
                             formants.Add(i.ToString());
                             break;
                         case string s:
-                            AddParameter(index, s);
+                            values.Add(s);
                             formants.Add("@" + index++.ToString());
                             break;
                         case IEnumerable ie:
@@ -95,15 +100,15 @@ namespace Ptixed.Sql
                             using (var enumerator = ie.Cast<object>().GetEnumerator())
                             {
                                 if (!enumerator.MoveNext())
-                                    sb.Append("SELECT TOP 0 0");
+                                    sb1.Append("SELECT TOP 0 0");
                                 else
                                 {
-                                    AddParameter(index, enumerator.Current);
+                                    values.Add(enumerator.Current);
                                     sb1.Append("@" + index++.ToString());
                                     while (enumerator.MoveNext())
                                     {
                                         sb1.Append(", ");
-                                        AddParameter(index, enumerator.Current);
+                                        values.Add(enumerator.Current);
                                         sb1.Append("@" + index++.ToString());
                                     }
                                 }
@@ -112,14 +117,13 @@ namespace Ptixed.Sql
                             formants.Add(sb1.ToString());
                             break;
                         default:
-                            AddParameter(index, argument);
+                            values.Add(argument);
                             formants.Add("@" + index++.ToString());
                             break;
                     }
                 sb.Append(string.Format(part.Format, formants.ToArray()));                
             }
-            command.CommandText += sb.ToString();
-            return command;
+            return (sb.ToString(), values);
         }
     }
 }
