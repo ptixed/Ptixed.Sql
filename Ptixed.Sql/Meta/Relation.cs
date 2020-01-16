@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using Ptixed.Sql.Impl;
-using Ptixed.Sql.Util;
 
 namespace Ptixed.Sql.Meta
 {
@@ -21,7 +20,7 @@ namespace Ptixed.Sql.Meta
             _member = member;
             
             var undertype = member.PropertyType.GetInterfaces()
-                .FirstOrDefault(x => x.IsConstructedGenericType && x.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                .FirstOrDefault(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                 ?.GetGenericArguments()
                 .FirstOrDefault();
             

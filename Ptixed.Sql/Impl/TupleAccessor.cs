@@ -1,5 +1,4 @@
-﻿using Ptixed.Sql.Util;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection.Emit;
@@ -34,7 +33,7 @@ namespace Ptixed.Sql.Impl
 
         public static TupleAccessor Get(Type type) => Cache.GetOrAdd(type, t =>
         {
-            if (!t.IsConstructedGenericType || !TupleTypes.Contains(t.GetGenericTypeDefinition()))
+            if (!t.IsGenericType || !TupleTypes.Contains(t.GetGenericTypeDefinition()))
                 return null;
             return new TupleAccessor(t);
         });
@@ -64,11 +63,11 @@ namespace Ptixed.Sql.Impl
                 il.Emit(values);
                 il.Emit(OpCodes.Ldc_I4, i);
                 il.Emit(OpCodes.Ldelem_Ref);
-                il.Emit(types[i].IsValueType() ? OpCodes.Unbox_Any : OpCodes.Castclass, types[i]);
+                il.Emit(types[i].IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, types[i]);
             }
 
             il.Emit(OpCodes.Newobj, ctor);
-            if (type.IsValueType())
+            if (type.IsValueType)
                 il.Emit(OpCodes.Box, type);
             il.Emit(OpCodes.Ret);
 

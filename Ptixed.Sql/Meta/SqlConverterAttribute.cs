@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using Ptixed.Sql.Impl;
-using Ptixed.Sql.Util;
 
 namespace Ptixed.Sql.Meta
 {

@@ -1,5 +1,4 @@
-﻿using Ptixed.Sql.Util;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -46,7 +45,7 @@ namespace Ptixed.Sql.Impl
                 {
                     typeof(object),
                     typeof(int),
-                }, type.GetModule(), true);
+                }, type.Module, true);
             var il = getter.GetILGenerator();
 
             var labels = members.Select(x => il.DefineLabel()).ToArray();
@@ -63,13 +62,13 @@ namespace Ptixed.Sql.Impl
                     case PropertyInfo pi:
                         //il.Emit(pi.PropertyType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, pi.PropertyType);
                         il.Emit(OpCodes.Callvirt, pi.GetMethod);
-                        if (pi.PropertyType.IsValueType())
+                        if (pi.PropertyType.IsValueType)
                             il.Emit(OpCodes.Box, pi.PropertyType);
                         break;
                     case FieldInfo fi:
                         //il.Emit(fi.FieldType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, fi.FieldType);
                         il.Emit(OpCodes.Ldfld, fi);
-                        if (fi.FieldType.IsValueType())
+                        if (fi.FieldType.IsValueType)
                             il.Emit(OpCodes.Box, fi.FieldType);
                         break;
                     default:
@@ -92,7 +91,7 @@ namespace Ptixed.Sql.Impl
                     typeof(object),
                     typeof(int),
                     typeof(object),
-                }, type.GetModule(), true);
+                }, type.Module, true);
             var il = setter.GetILGenerator();
 
             var labels = members.Select(x => il.DefineLabel()).ToArray();
@@ -109,7 +108,7 @@ namespace Ptixed.Sql.Impl
                     case PropertyInfo pi when pi.CanWrite:
                         il.Emit(self);
                         il.Emit(value);
-                        il.Emit(pi.PropertyType.IsValueType() ? OpCodes.Unbox_Any : OpCodes.Castclass, pi.PropertyType);
+                        il.Emit(pi.PropertyType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, pi.PropertyType);
                         il.Emit(OpCodes.Callvirt, pi.SetMethod);
                         break;
                     case PropertyInfo pi:
@@ -117,7 +116,7 @@ namespace Ptixed.Sql.Impl
                     case FieldInfo fi:
                         il.Emit(self);
                         il.Emit(value);
-                        il.Emit(fi.FieldType.IsValueType() ? OpCodes.Unbox_Any : OpCodes.Castclass, fi.FieldType);
+                        il.Emit(fi.FieldType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, fi.FieldType);
                         il.Emit(OpCodes.Stfld, fi);
                         break;
                     default:
@@ -132,11 +131,11 @@ namespace Ptixed.Sql.Impl
 
         private static Func<object> CreateCreateNew(Type type)
         {
-            var ctor = type.GetConstructor(new Type[0]);
+            var ctor = type.GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null);
             if (ctor == null)
                 return null;
 
-            var createnew = new DynamicMethod(type.FullName + "_new", typeof(object), Array.Empty<Type>(), type.GetModule(), true);
+            var createnew = new DynamicMethod(type.FullName + "_new", typeof(object), Array.Empty<Type>(), type.Module, true);
             var il = createnew.GetILGenerator();
 
             il.Emit(OpCodes.Newobj, ctor);

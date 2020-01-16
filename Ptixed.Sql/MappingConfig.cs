@@ -1,5 +1,4 @@
-﻿using Ptixed.Sql.Util;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 
 namespace Ptixed.Sql
@@ -27,13 +26,13 @@ namespace Ptixed.Sql
 
         protected virtual Func<object, object> FromDbImpl(Type type)
         {
-            if (type.IsConstructedGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
             {
                 var subconverter = _fromdb.GetOrAdd(type.GetGenericArguments()[0], FromDbImpl);
                 return x => x == null ? null : subconverter(x);
             }
 
-            if (!type.IsEnum() && typeof(IConvertible).IsAssignableFrom(type))
+            if (!type.IsEnum && typeof(IConvertible).IsAssignableFrom(type))
                 return x => x == null || x.GetType() == type
                     ? x
                     : (x is IConvertible c ? c.ToType(type, null) : ((IConvertible)x.ToString()).ToType(type, null));

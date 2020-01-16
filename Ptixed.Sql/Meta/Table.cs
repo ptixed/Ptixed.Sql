@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Ptixed.Sql.Impl;
-using Ptixed.Sql.Util;
 
 namespace Ptixed.Sql.Meta
 {
@@ -34,7 +33,7 @@ namespace Ptixed.Sql.Meta
 
         private Table(Type type)
         {
-            var lookup = type.GetProperties()
+            var lookup = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                 .Select(x => LogicalColumn.TryCreate(this, x))
                 .Where(x => x != null)
                 .ToDictionary<LogicalColumn, LogicalColumn, MemberInfo>(x => x, x => x.Member);
@@ -55,7 +54,7 @@ namespace Ptixed.Sql.Meta
             PhysicalColumns = LogicalColumns.SelectMany(x => x.PhysicalColumns.Select(y => y.AddPk(x == PrimaryKey))).ToArray();
             AutoIncrementColumn = PhysicalColumns.SingleOrDefault(x => x.IsAutoIncrement);
             
-            Relations = type.GetProperties()
+            Relations = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                 .Select(x => Relation.TryCreate(x))
                 .Where(x => x != null)
                 .ToDictionary(x => x.SlotType);
