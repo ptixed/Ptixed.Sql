@@ -15,6 +15,8 @@ namespace Ptixed.Sql.Impl
         public readonly Type Type;
         public readonly Dictionary<TKey, int> Lookup;
 
+        public bool CreateNewSupported => _createnew != null;
+
         public object this[object target, TKey name]
         {
             get => _getter(target, Lookup[name]);

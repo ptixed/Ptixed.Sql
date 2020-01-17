@@ -53,7 +53,7 @@ namespace Ptixed.Sql
             foreach (var (value, i) in values.Select((x, i) => (x, i)))
             {
                 var dbvalue = mapping.ToDb(value?.GetType(), value);
-                var parameter = dbvalue as SqlParameter ?? new SqlParameter { Value = value };
+                var parameter = dbvalue as SqlParameter ?? new SqlParameter { Value = dbvalue };
                 parameter.ParameterName = i.ToString();
                 command.Parameters.Add(parameter);
             }
