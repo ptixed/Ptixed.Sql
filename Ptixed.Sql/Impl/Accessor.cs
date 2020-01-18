@@ -52,23 +52,24 @@ namespace Ptixed.Sql.Impl
 
             var labels = members.Select(x => il.DefineLabel()).ToArray();
 
+            il.Emit(self);
+            if (type.IsValueType)
+                il.Emit(OpCodes.Unbox, type);
+
             il.Emit(index);
             il.Emit(OpCodes.Switch, labels);
 
             for (int i = 0; i < members.Length; ++i)
             {
                 il.MarkLabel(labels[i]);
-                il.Emit(self);
                 switch (members[i])
                 {
                     case PropertyInfo pi:
-                        //il.Emit(pi.PropertyType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, pi.PropertyType);
-                        il.Emit(OpCodes.Callvirt, pi.GetMethod);
+                        il.Emit(type.IsValueType ? OpCodes.Call : OpCodes.Callvirt, pi.GetMethod);
                         if (pi.PropertyType.IsValueType)
                             il.Emit(OpCodes.Box, pi.PropertyType);
                         break;
                     case FieldInfo fi:
-                        //il.Emit(fi.FieldType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, fi.FieldType);
                         il.Emit(OpCodes.Ldfld, fi);
                         if (fi.FieldType.IsValueType)
                             il.Emit(OpCodes.Box, fi.FieldType);
@@ -98,6 +99,10 @@ namespace Ptixed.Sql.Impl
 
             var labels = members.Select(x => il.DefineLabel()).ToArray();
 
+            il.Emit(self);
+            if (type.IsValueType)
+                il.Emit(OpCodes.Unbox, type);
+
             il.Emit(index);
             il.Emit(OpCodes.Switch, labels);
 
@@ -108,15 +113,14 @@ namespace Ptixed.Sql.Impl
                 switch (members[i])
                 {
                     case PropertyInfo pi when pi.CanWrite:
-                        il.Emit(self);
                         il.Emit(value);
                         il.Emit(pi.PropertyType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, pi.PropertyType);
-                        il.Emit(OpCodes.Callvirt, pi.SetMethod);
+                        il.Emit(type.IsValueType ? OpCodes.Call : OpCodes.Callvirt, pi.SetMethod);
                         break;
                     case PropertyInfo pi:
+                        il.Emit(OpCodes.Pop);
                         break;
                     case FieldInfo fi:
-                        il.Emit(self);
                         il.Emit(value);
                         il.Emit(fi.FieldType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, fi.FieldType);
                         il.Emit(OpCodes.Stfld, fi);
