@@ -22,12 +22,12 @@ namespace Ptixed.Sql.Impl
 
         public static Exception NoPrimaryKey(Type type) 
             => new PtixedException($"{type} has no primary key", type);
-        
+
+        public static Exception ColumnNotFound(string column)
+            => new PtixedException($"Column '{column}' was not found");
+
         public static Exception InvalidTransacionState(string state)
             => new PtixedException($"Transaction in state {state}");
-        
-        public static Exception ResultAlreadyConsumed()
-            => new PtixedException("Cannot enumerate result multiple times or when there is other result associated with connection");
 
         public static Exception InvalidColumnName(string name)
             => new PtixedException($"Column named {name} was not found");

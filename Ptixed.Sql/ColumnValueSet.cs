@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading;
+using Ptixed.Sql.Impl;
 using Ptixed.Sql.Util;
 
 namespace Ptixed.Sql
@@ -13,7 +14,15 @@ namespace Ptixed.Sql
         private readonly Range<ColumnValue> _values;
         private readonly Lazy<Dictionary<string, object>> _dict;
 
-        public object this[string key] => _dict.Value[key];
+        public object this[string key]
+        {
+            get
+            {
+                if (_dict.Value.TryGetValue(key, out object value))
+                    return value;
+                throw PtixedException.ColumnNotFound(key);
+            }
+        }
         public object this[int key] => _values[key];
         public int Count => _values.Length;
 
