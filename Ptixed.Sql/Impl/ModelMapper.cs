@@ -107,9 +107,12 @@ namespace Ptixed.Sql.Impl
             }
             roots.Add((rows.Length1, null));
 
+            var done = new HashSet<object>();
             for (int roi = 0; roi < roots.Count - 1; ++roi)
             {
                 var root = rows[roots[roi].index, 0];
+                if (done.Contains(table[root, table.PrimaryKey]))
+                    continue;
 
                 for (var rei = 0; rei < relations.Count - 1; ++rei)
                 {
@@ -129,6 +132,7 @@ namespace Ptixed.Sql.Impl
                 }
 
                 yield return root;
+                done.Add(table[root, table.PrimaryKey]);
             }
         }
     }
