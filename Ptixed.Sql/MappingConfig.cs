@@ -1,10 +1,30 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace Ptixed.Sql
 {
     public class MappingConfig
     {
+        public readonly HashSet<Type> ScalarTypes = new HashSet<Type>
+        {
+            typeof(string),
+            typeof(DateTime), typeof(DateTime?),
+            typeof(bool), typeof(bool?),
+            typeof(byte), typeof(byte?),
+            typeof(sbyte), typeof(sbyte?),
+            typeof(char), typeof(char?),
+            typeof(decimal), typeof(decimal?),
+            typeof(double), typeof(double?),
+            typeof(float), typeof(float?),
+            typeof(int), typeof(int?),
+            typeof(uint), typeof(uint?),
+            typeof(long), typeof(long?),
+            typeof(ulong), typeof(ulong?),
+            typeof(short), typeof(short?),
+            typeof(ushort), typeof(ushort?),
+        };
+
         private readonly ConcurrentDictionary<Type, Func<object, object>> _todb = new ConcurrentDictionary<Type, Func<object, object>>();
         private readonly ConcurrentDictionary<Type, Func<object, object>> _fromdb = new ConcurrentDictionary<Type, Func<object, object>>();
 

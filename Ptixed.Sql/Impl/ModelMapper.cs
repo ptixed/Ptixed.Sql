@@ -8,32 +8,13 @@ namespace Ptixed.Sql.Impl
 {
     public static class ModelMapper
     {
-        private static readonly HashSet<Type> ScalarTypes = new HashSet<Type>
-        {
-            typeof(string),
-            typeof(DateTime), typeof(DateTime?),
-            typeof(bool), typeof(bool?),
-            typeof(byte), typeof(byte?),
-            typeof(sbyte), typeof(sbyte?),
-            typeof(char), typeof(char?),
-            typeof(decimal), typeof(decimal?),
-            typeof(double), typeof(double?),
-            typeof(float), typeof(float?),
-            typeof(int), typeof(int?),
-            typeof(uint), typeof(uint?),
-            typeof(long), typeof(long?),
-            typeof(ulong), typeof(ulong?),
-            typeof(short), typeof(short?),
-            typeof(ushort), typeof(ushort?),
-        };
-
         public static object[] Map(MappingConfig config, Type[] types, ColumnValueSet columns)
         {
             int offset = 0;
             var ret = new object[types.Length];
             for (int i = 0; i < types.Length; ++i)
             {
-                if (ScalarTypes.Contains(types[i]))
+                if (config.ScalarTypes.Contains(types[i]))
                 {
                     ret[i] = MapScalar(config, types[i], columns.GetRange(offset, 1));
                     offset += 1;
@@ -50,7 +31,7 @@ namespace Ptixed.Sql.Impl
 
         public static object Map(MappingConfig config, Type type, ColumnValueSet columns)
         {
-            if (ScalarTypes.Contains(type))
+            if (config.ScalarTypes.Contains(type))
                 return MapScalar(config, type, columns);
             return MapModel(config, Table.Get(type), columns);
         }
