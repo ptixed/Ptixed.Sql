@@ -11,6 +11,9 @@ namespace Ptixed.Sql
     public class Query
     {
         private readonly List<FormattableString> _parts =  new List<FormattableString>();
+        public bool IsEmpty => _parts.Count == 0;
+
+        public TimeSpan? Timeout;
 
         public Query() { }
         public Query(FormattableString query) => Append(query);
@@ -57,6 +60,9 @@ namespace Ptixed.Sql
                 parameter.ParameterName = i.ToString();
                 command.Parameters.Add(parameter);
             }
+
+            if (Timeout != null)
+                command.CommandTimeout = (int)Timeout.Value.TotalSeconds;
 
             return command;
         }
