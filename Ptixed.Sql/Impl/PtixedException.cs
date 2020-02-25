@@ -34,5 +34,8 @@ namespace Ptixed.Sql.Impl
 
         public static Exception MissingImplementation(Type type, string method)
             => new PtixedException($"{type.Name} shoud implement {method}");
+
+        public static Exception InvalidMapping()
+            => new PtixedException($"Invalid mapping, not all columns were consumed");
     }
 }
