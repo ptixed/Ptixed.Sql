@@ -1,12 +1,8 @@
 
 /.vs/
-/.idea/
 
 /packages/
 bin/
 obj/
 
 *.user
-*.nupkg
-*.exe
-
