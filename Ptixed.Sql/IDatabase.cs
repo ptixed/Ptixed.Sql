@@ -12,5 +12,7 @@ namespace Ptixed.Sql
         void NonQuery(params Query[] query);
 
         IDatabaseTransaction OpenTransaction(IsolationLevel isolation);
+
+        void Reset();
     }
 }

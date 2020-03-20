@@ -16,7 +16,7 @@ namespace Ptixed.Sql.Impl
         private IDisposable _result;
 
         public readonly ConnectionConfig Config;
-        public readonly Lazy<SqlConnection> Connection;
+        public Lazy<SqlConnection> Connection;
 
         public readonly DiagnosticsClass Diagnostics = new DiagnosticsClass();
 
@@ -30,12 +30,7 @@ namespace Ptixed.Sql.Impl
         public Database(ConnectionConfig config)
         {
             Config = config;
-            Connection = new Lazy<SqlConnection>(() =>
-            {
-                var sql = new SqlConnection(Config.ConnectionString);
-                sql.Open();
-                return sql;
-            }, LazyThreadSafetyMode.None);
+            Reset();
         }
 
         private SqlCommand NewCommand()
@@ -55,8 +50,19 @@ namespace Ptixed.Sql.Impl
         {
             _result?.Dispose();
             _transaction?.Dispose();
-            if (Connection.IsValueCreated)
+            if (Connection?.IsValueCreated == true)
                 Connection.Value.Dispose();
+        }
+
+        public void Reset()
+        {
+            Dispose();
+            Connection = new Lazy<SqlConnection>(() =>
+            {
+                var sql = new SqlConnection(Config.ConnectionString);
+                sql.Open();
+                return sql;
+            }, LazyThreadSafetyMode.None);
         }
 
         public void NonQuery(params Query[] query)
