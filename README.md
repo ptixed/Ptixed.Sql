@@ -1,8 +1,6 @@
 # Ptixed.Sql
 
-<img align="right" alt="ptixed.sql logo" src="https://github.com/ptixed/Ptixed.Sql/raw/master/logo.png" />
-
-This library can be used for accessing MSSQL databases (but it should be easy enough to write other adapters). It builds on idea by Jon Skeet from here https://www.youtube.com/watch?v=JIlO_EebEQI&t=43m40s so that you can execute queries like so:
+This library can be used for accessing MSSQL databases (but it should be easy enough to write other adapters). It builds on idea by Jon Skeet from here https://www.youtube.com/watch?v=JIlO_EebEQI&t=44m40s so that you can execute queries like so:
 
 ```c#
 var result = Database.Query($"SELECT * FROM Table WHERE id > {x}");
