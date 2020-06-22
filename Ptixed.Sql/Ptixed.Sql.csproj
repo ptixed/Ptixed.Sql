@@ -3,7 +3,7 @@
         <TargetFrameworks>netstandard2.0</TargetFrameworks>
         <SignAssembly>False</SignAssembly>
         <Title>Ptixed.Sql</Title>
-        <Version>0.4</Version>
+        <Version>0.5</Version>
         <Description>Library for interacting with Microsoft SQL databases</Description>
         <Authors>ptixed</Authors>
         <RepositoryUrl>https://github.com/ptixed/Ptixed.Sql</RepositoryUrl>

@@ -7,11 +7,25 @@ namespace Ptixed.Sql
 {
     public static class DatabaseExtensions
     {
-        public static List<T> ToList<T>(this IDatabase db, FormattableString query)
-            => db.Query<T>(new Query(query)).ToList();
-
-        public static List<T> ToList<T>(this IDatabase db, FormattableString query, params Type[] types)
+        public static List<T> ToList<T>(this IDatabase db, FormattableString query, Type[] types)
             => db.Query<T>(new Query(query), types).ToList();
+
+        public static List<T> ToList<T>(this IDatabase db, FormattableString query)
+            => ToList<T>(db, query, new[] { typeof(T) });
+        public static List<T1> ToList<T1, T2>(this IDatabase db, FormattableString query)
+            => ToList<T1>(db, query, new[] { typeof(T1), typeof(T2) });
+        public static List<T1> ToList<T1, T2, T3>(this IDatabase db, FormattableString query)
+            => ToList<T1>(db, query, new[] { typeof(T1), typeof(T2), typeof(T3) });
+        public static List<T1> ToList<T1, T2, T3, T4>(this IDatabase db, FormattableString query)
+            => ToList<T1>(db, query, new[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4) });
+        public static List<T1> ToList<T1, T2, T3, T4, T5>(this IDatabase db, FormattableString query)
+            => ToList<T1>(db, query, new[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5) });
+        public static List<T1> ToList<T1, T2, T3, T4, T5, T6>(this IDatabase db, FormattableString query)
+            => ToList<T1>(db, query, new[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6) });
+        public static List<T1> ToList<T1, T2, T3, T4, T5, T6, T7>(this IDatabase db, FormattableString query)
+            => ToList<T1>(db, query, new[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6), typeof(T7) });
+        public static List<T1> ToList<T1, T2, T3, T4, T5, T6, T7, T8>(this IDatabase db, FormattableString query)
+            => ToList<T1>(db, query, new[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6), typeof(T7), typeof(T8) });
 
         public static T Single<T>(this IDatabase db, FormattableString query)
             => db.Query<T>(new Query(query)).Single();
