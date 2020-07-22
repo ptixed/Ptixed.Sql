@@ -7,7 +7,7 @@ namespace Ptixed.Sql
 {
     public static class DatabaseExtensions
     {
-        public static List<T> ToList<T>(this IDatabase db, FormattableString query, Type[] types)
+        public static List<T> ToList<T>(this IDatabase db, FormattableString query, params Type[] types)
             => db.Query<T>(new Query(query), types).ToList();
 
         public static List<T> ToList<T>(this IDatabase db, FormattableString query)
