@@ -14,6 +14,7 @@ namespace Ptixed.Sql.Meta
         private readonly Accessor<LogicalColumn> _accessor;
 
         public readonly string Name;
+        public readonly Type Type;
 
         public readonly LogicalColumn[] LogicalColumns;
         public readonly LogicalColumn PrimaryKey;
@@ -33,6 +34,8 @@ namespace Ptixed.Sql.Meta
 
         private Table(Type type)
         {
+            Type = type;
+
             var lookup = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                 .Select(x => LogicalColumn.TryCreate(this, x))
                 .Where(x => x != null)

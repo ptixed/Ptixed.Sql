@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using Ptixed.Sql.Meta;
 
 namespace Ptixed.Sql
 {
@@ -58,6 +59,11 @@ namespace Ptixed.Sql
                     : (x is IConvertible c ? c.ToType(type, null) : ((IConvertible)x.ToString()).ToType(type, null));
 
             return x => x;
+        }
+
+        public virtual string FormatTableName(Table table)
+        {
+            return table.Name;
         }
     }
 }

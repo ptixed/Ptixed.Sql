@@ -86,7 +86,10 @@ namespace Ptixed.Sql
                             formants.Add(text);
                             break;
                         case Table tm:
-                            formants.Add(tm.ToString());
+                            formants.Add(mapping.FormatTableName(tm));
+                            break;
+                        case Type t:
+                            formants.Add(mapping.FormatTableName(Table.Get(t)));
                             break;
                         case PhysicalColumn pc:
                             formants.Add(pc.ToString());
