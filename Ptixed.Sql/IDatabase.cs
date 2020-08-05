@@ -9,7 +9,7 @@ namespace Ptixed.Sql
         MappingConfig MappingConfig { get; }
 
         IEnumerable<T> Query<T>(Query query, params Type[] types);
-        void NonQuery(params Query[] query);
+        int NonQuery(params Query[] query);
 
         IDatabaseTransaction OpenTransaction(IsolationLevel isolation);
 

@@ -65,13 +65,13 @@ namespace Ptixed.Sql.Impl
             }, LazyThreadSafetyMode.None);
         }
 
-        public void NonQuery(params Query[] query)
+        public int NonQuery(params Query[] query)
         {
             if (query.Length == 0)
-                return;
+                return 0;
 
             var command = query.Aggregate((x, y) => x.Append($"\n\n").Append(y)).ToSql(NewCommand(), Config.Mappping);
-            command.ExecuteNonQuery();
+            return command.ExecuteNonQuery();
         }
 
         public IEnumerable<T> Query<T>(Query query, params Type[] types)

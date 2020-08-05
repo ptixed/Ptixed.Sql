@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Ptixed.Sql
@@ -17,6 +18,8 @@ namespace Ptixed.Sql
 
         public Query() { }
         public Query(FormattableString query) => Append(query);
+
+        public static Query Unsafe(string query) => new Query(FormattableStringFactory.Create(query));
 
         public Query Append(FormattableString query)
         {

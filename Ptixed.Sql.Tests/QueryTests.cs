@@ -236,5 +236,28 @@ namespace Ptixed.Sql.Tests
                 Assert.Equal(2, count);
             }
         }
+
+        [Fact]
+        public void TestAffectedRows()
+        {
+            using (var db = _db.OpenConnection())
+            {
+                db.Insert(new Model2
+                {
+                    ModelId = 1
+                });
+                db.Insert(new Model2
+                {
+                    ModelId = 2
+                });
+
+                var q1 = new Query($"DELETE FROM Model2 WHERE Id = 1");
+                var q2 = new Query($"DELETE FROM Model2 WHERE Id = 2");
+
+                var affected = db.NonQuery(q1, q2);
+
+                Assert.Equal(2, affected);
+            }
+        }
     }
 }
