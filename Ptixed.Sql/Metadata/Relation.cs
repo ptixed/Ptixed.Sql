@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using Ptixed.Sql.Implementation;
+using Ptixed.Sql.Attributes;
+using Ptixed.Sql.Implementation.Accessors;
 
 namespace Ptixed.Sql.Metadata
 {

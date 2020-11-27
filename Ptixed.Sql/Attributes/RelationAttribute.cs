@@ -1,9 +1,9 @@
 ﻿using System;
 
-namespace Ptixed.Sql.Metadata
+namespace Ptixed.Sql.Attributes
 {
     [AttributeUsage(AttributeTargets.Property)]
-    public class IgnoreAttribute : Attribute
+    public class RelationAttribute : Attribute
     {
     }
 }

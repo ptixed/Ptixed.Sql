@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace Ptixed.Sql.Implementation
+namespace Ptixed.Sql.Implementation.Accessors
 {
     public class TypeAccessor
     {

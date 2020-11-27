@@ -40,6 +40,6 @@ namespace Ptixed.Sql.Tests
                 db.NonQuery(new Query($"drop table Model; drop table Model2;"));
         }
 
-        public Database OpenConnection() => new Database(_config);
+        public IDatabase OpenConnection() => new Database(_config);
     }
 }

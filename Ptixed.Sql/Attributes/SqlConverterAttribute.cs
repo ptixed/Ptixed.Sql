@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Linq;
-using Ptixed.Sql.Implementation;
 
-namespace Ptixed.Sql.Metadata
+namespace Ptixed.Sql.Attributes
 {
     [AttributeUsage(AttributeTargets.Property)]
     public class SqlConverterAttribute : Attribute

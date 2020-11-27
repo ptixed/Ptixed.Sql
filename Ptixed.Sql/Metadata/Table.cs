@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Ptixed.Sql.Attributes;
 using Ptixed.Sql.Implementation;
 
 namespace Ptixed.Sql.Metadata
@@ -71,6 +72,14 @@ namespace Ptixed.Sql.Metadata
         public override int GetHashCode() => Name.GetHashCode();
 
         public object CreateNew() => _accessor.CreateNew();
+
+        public object Clone(object original)
+        {
+            var clone = CreateNew();
+            foreach (var column in LogicalColumns)
+                this[clone, column] = this[original, column];
+            return clone;
+        }
 
         public Query GetPrimaryKeyCondition(object o)
         {

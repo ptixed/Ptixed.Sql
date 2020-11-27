@@ -6,9 +6,9 @@ using System.Linq;
 
 namespace Ptixed.Sql.Implementation
 {
-    public static class ModelMapper
+    internal static class ModelMapper
     {
-        public static object[] Map(MappingConfig config, Type[] types, ColumnValueSet columns)
+        public static object[] Map(MappingConfig config, ITracker tracker, Type[] types, ColumnValueSet columns)
         {
             int offset = 0;
             var ret = new object[types.Length];
@@ -22,7 +22,7 @@ namespace Ptixed.Sql.Implementation
                 else
                 {
                     var table = Table.Get(types[i]);
-                    ret[i] = MapModel(config, table, columns.GetRange(offset, table.PhysicalColumns.Length));
+                    ret[i] = MapModel(config, tracker, table, columns.GetRange(offset, table.PhysicalColumns.Length));
                     offset += table.PhysicalColumns.Length;
                 }
             }
@@ -31,23 +31,29 @@ namespace Ptixed.Sql.Implementation
             return ret;
         }
 
-        public static object Map(MappingConfig config, Type type, ColumnValueSet columns)
+        public static object Map(MappingConfig config, ITracker tracker, Type type, ColumnValueSet columns)
         {
             if (config.ScalarTypes.Contains(type))
                 return MapScalar(config, type, columns);
-            return MapModel(config, Table.Get(type), columns);
+            return MapModel(config, tracker, Table.Get(type), columns);
         }
 
-        private static object MapModel(MappingConfig config, Table table, ColumnValueSet columns)
+        private static object MapModel(MappingConfig config, ITracker tracker, Table table, ColumnValueSet columns)
         {
             if (table.PrimaryKey != null)
                 if (table.PrimaryKey.PhysicalColumns.All(x => columns[x.Name] == null))
                     return null;
 
+            var pk = table.PrimaryKey.FromQuery(columns, config);
+            var old = tracker.Get(table, pk);
+            if (old != null)
+                return old;
+
             var model = table.CreateNew();
             foreach (var column in table.LogicalColumns)
                 table[model, column] = column.FromQuery(columns, config);
 
+            tracker.Set(table, pk, model);
             return model;
         }
 

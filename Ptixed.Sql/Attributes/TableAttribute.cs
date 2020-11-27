@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Ptixed.Sql.Metadata
+namespace Ptixed.Sql.Attributes
 {
     [AttributeUsage(AttributeTargets.Class)]
     public class TableAttribute : Attribute

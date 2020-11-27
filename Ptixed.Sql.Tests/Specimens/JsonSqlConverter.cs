@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Reflection;
 using Newtonsoft.Json;
+using Ptixed.Sql.Attributes;
 using Ptixed.Sql.Collections;
 using Ptixed.Sql.Metadata;
 

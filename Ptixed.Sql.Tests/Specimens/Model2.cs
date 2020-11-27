@@ -1,4 +1,5 @@
-﻿using Ptixed.Sql.Metadata;
+﻿using Ptixed.Sql.Attributes;
+using Ptixed.Sql.Metadata;
 
 namespace Ptixed.Sql.Tests.Specimens
 {

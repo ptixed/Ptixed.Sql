@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Ptixed.Sql.Attributes;
+using System;
 using System.Diagnostics.CodeAnalysis;
-using Ptixed.Sql.Metadata;
 
 namespace Ptixed.Sql.Tests.Specimens
 {

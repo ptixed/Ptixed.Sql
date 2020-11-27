@@ -11,6 +11,8 @@ namespace Ptixed.Sql
 {
     public class Query
     {
+        public static readonly Query Separator = new Query($"\n\n");
+
         private readonly List<FormattableString> _parts =  new List<FormattableString>();
 
         public TimeSpan? Timeout;
@@ -32,9 +34,9 @@ namespace Ptixed.Sql
             return this;
         }
 
-        public Query Append(FormattableString separator, IEnumerable<Query> parts) => Append(Join(separator, parts));
+        public Query Append(FormattableString separator, IEnumerable<Query> parts) => Append(Join(new Query(separator), parts));
 
-        public static Query Join(FormattableString separator, IEnumerable<Query> parts)
+        public static Query Join(Query separator, IEnumerable<Query> parts)
         {
             var query = new Query();
             using (var e = parts.GetEnumerator())

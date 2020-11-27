@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Ptixed.Sql.Implementation.Trackers;
+using Ptixed.Sql.Metadata;
+using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 
@@ -11,8 +13,7 @@ namespace Ptixed.Sql.Implementation
 
         private readonly IQueryExecutor _db;
         public readonly SqlTransaction SqlTransaction;
-
-        private readonly List<object> _deletes;
+        public readonly TransactionalTracker EntityTracker = new TransactionalTracker();
 
         private bool? _commited;
         private bool _disposed;
@@ -45,14 +46,14 @@ namespace Ptixed.Sql.Implementation
             }
         }
 
-        public int NonQuery(params Query[] query)
+        public int NonQuery(params Query[] queries)
         {
             if (_commited.HasValue)
                 throw PtixedException.InvalidTransacionState(_commited.Value ? "committed" : "rolledback");
 
             var qs = new List<Query>();
-            qs.Add(PrepareChangesQuery());
-            qs.AddRange(query);
+            qs.Add(EntityTracker.PrepareChangesQuery());
+            qs.AddRange(queries);
             return _db.NonQuery(qs.ToArray());
         }
 
@@ -61,8 +62,8 @@ namespace Ptixed.Sql.Implementation
             if (_commited.HasValue)
                 throw PtixedException.InvalidTransacionState(_commited.Value ? "committed" : "rolledback");
 
-            var changes = PrepareChangesQuery();
-            changes.Append($"\n\n");
+            var changes = EntityTracker.PrepareChangesQuery();
+            changes.Append(Sql.Query.Separator);
             changes.Append(query);
 
             // keep object copies 
@@ -73,30 +74,48 @@ namespace Ptixed.Sql.Implementation
             throw new NotImplementedException();
         }
 
+        #region Queries
+
+        public T Insert<T>(T entity)
+        {
+            return Insert(new[] { entity })[0];
+        }
+
         public List<T> Insert<T>(params T[] entities)
         {
             if (entities.Length == 0)
                 return new List<T>();
 
-            // PrepareChangesQuery() +  Database.Insert
+            // PrepareChangesQuery() + Database.Insert + tracker
+
+            // 
+
+            throw new NotImplementedException();
+        }
+
+        public void Update(params object[] entities)
+        {
+            // PrepareChangesQuery() +  Database.Update
 
             throw new NotImplementedException();
         }
 
         public void Delete(params object[] entities)
         {
-            _deletes.AddRange(entities);
+            foreach (var entity in entities)
+            {
+                var table = Table.Get(entity.GetType());
+                EntityTracker.ScheduleDelete(table, table[entity, table.PrimaryKey]);
+            }
         }
 
-        private Query PrepareChangesQuery()
+        public void Delete<T>(params object[] ids)
         {
-            // prepare updates and deletes queries
-
-            _deletes.Clear();
-
-            // commit tracked objects 
-
-            throw new NotImplementedException();
+            var table = Table.Get(typeof(T));
+            foreach (var id in ids)
+                EntityTracker.ScheduleDelete(table, id);
         }
+
+        #endregion
     }
 }

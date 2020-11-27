@@ -1,9 +1,10 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Ptixed.Sql.Metadata;
 
-namespace Ptixed.Sql
+namespace Ptixed.Sql.Implementation
 {
-    public static class QueryBuilder
+    internal static class QueryBuilder
     {
         public static Query GetById<T>(params object[] ids)
         {
@@ -52,7 +53,7 @@ namespace Ptixed.Sql
             if (entities == null || entities.Length == 0)
                 return null;
             
-            return Query.Join($"\n\n", entities.Select(entity =>
+            return Query.Join(Query.Separator, entities.Select(entity =>
             {
                 var table = Table.Get(entity.GetType());
                 var columns = table.PhysicalColumns.Where(x => !x.IsPrimaryKey).ToList<PhysicalColumn>();
@@ -75,7 +76,7 @@ namespace Ptixed.Sql
             if (entities == null || entities.Length == 0)
                 return null;
             
-            return Query.Join($"\n\n", entities.Select(entity =>
+            return Query.Join(Query.Separator, entities.Select(entity =>
             {
                 var table = Table.Get(entity.GetType());
                 var id = table[entity, table.PrimaryKey];
@@ -87,12 +88,12 @@ namespace Ptixed.Sql
             }));
         }
 
-        public static Query Delete<T>(params object[] ids)
+        public static Query Delete(Type type, params object[] ids)
         {
             if (ids == null || ids.Length == 0)
                 return null;
             
-            var table = Table.Get(typeof(T));
+            var table = Table.Get(type);
 
             var query = new Query();
             query.Append($"DELETE FROM {table} WHERE ");

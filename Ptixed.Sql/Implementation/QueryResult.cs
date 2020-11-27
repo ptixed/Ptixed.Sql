@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using Ptixed.Sql.Collections;
+using Ptixed.Sql.Implementation.Accessors;
+using Ptixed.Sql.Implementation.Trackers;
 using Ptixed.Sql.Metadata;
 
 namespace Ptixed.Sql.Implementation
@@ -12,13 +14,15 @@ namespace Ptixed.Sql.Implementation
     {
         private readonly MappingConfig _config;
         private readonly SqlDataReader _reader;
+        private readonly ITracker _tracker;
         private readonly Type[] _types;
         private readonly List<T> _result;
 
-        public QueryResult(MappingConfig config, SqlDataReader reader, Type[] types)
+        public QueryResult(MappingConfig config, SqlDataReader reader, ITracker tracker, Type[] types)
         {
             _config = config;
             _reader = reader;
+            _tracker = tracker ?? new DefaultTracker();
             _types = types.Length > 0 ? types : new[] { typeof(T) };
 
             try
@@ -85,7 +89,7 @@ namespace Ptixed.Sql.Implementation
                 if (!ReadRow())
                     return false;
 
-                var current = ModelMapper.Map(Result._config, Result._types, _columns);
+                var current = ModelMapper.Map(Result._config, Result._tracker, Result._types, _columns);
                 _consumed = true;
 
                 if (_accessor.PrimaryKey == null)
@@ -99,7 +103,7 @@ namespace Ptixed.Sql.Implementation
 
                 while (ReadRow())
                 {
-                    var next = ModelMapper.Map(Result._config, Result._types, _columns);
+                    var next = ModelMapper.Map(Result._config, Result._tracker, Result._types, _columns);
                     if (currentpk?.Equals(_accessor[next[0], _accessor.PrimaryKey]) != true)
                         break;
                     objs.Add(next);
@@ -137,7 +141,7 @@ namespace Ptixed.Sql.Implementation
                 if (!Result._reader.Read())
                     return false;
 
-                Current = (T)ModelMapper.Map(Result._config, typeof(T), new ColumnValueSet(Result._reader));
+                Current = (T)ModelMapper.Map(Result._config, Result._tracker, typeof(T), new ColumnValueSet(Result._reader));
 
                 return true;
             }
@@ -176,7 +180,7 @@ namespace Ptixed.Sql.Implementation
                 if (!Result._reader.Read())
                     return false;
 
-                var objs = ModelMapper.Map(Result._config, _tuple.Types, new ColumnValueSet(Result._reader));
+                var objs = ModelMapper.Map(Result._config, Result._tracker, _tuple.Types, new ColumnValueSet(Result._reader));
                 Current = (T)_tuple.CreateNew(objs);
 
                 return true;

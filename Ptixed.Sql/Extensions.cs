@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Ptixed.Sql.Implementation;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -75,25 +76,6 @@ namespace Ptixed.Sql
         public static T GetById<T>(this IQueryExecutor db, object id)
         {
             return GetByIds<T>(db, id).SingleOrDefault();
-        }
-        
-        public static T Insert<T>(this IQueryExecutor db, T entity)
-        {
-            return Insert(db, new [] { entity })[0];
-        }
-
-        public static void Update(this IQueryExecutor db, params object[] entities)
-        {
-            if (entities.Length == 0)
-                return;
-            db.NonQuery(QueryBuilder.Update(entities));
-        }
-
-        public static void Delete<T>(this IQueryExecutor db, params object[] ids)
-        {
-            if (ids.Length == 0)
-                return;
-            db.NonQuery(QueryBuilder.Delete<T>(ids));
         }
     }
 }

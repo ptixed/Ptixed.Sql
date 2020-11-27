@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Ptixed.Sql.Attributes;
 using Ptixed.Sql.Metadata;
 
 namespace Ptixed.Sql.Tests.Specimens

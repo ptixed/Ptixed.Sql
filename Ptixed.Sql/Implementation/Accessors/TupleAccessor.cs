@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection.Emit;
 
-namespace Ptixed.Sql.Implementation
+namespace Ptixed.Sql.Implementation.Accessors
 {
     public class TupleAccessor
     {

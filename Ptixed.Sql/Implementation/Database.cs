@@ -53,22 +53,29 @@ namespace Ptixed.Sql.Implementation
             return _transaction;
         }
 
-        public int NonQuery(params Query[] query)
+        public int NonQuery(params Query[] queries)
         {
-            if (query.Length == 0)
+            if (queries.Length == 0)
                 return 0;
 
-            var command = query.Aggregate((x, y) => x.Append($"\n\n").Append(y)).ToSql(CreateCommand(), Config.Mappping);
-            return command.ExecuteNonQuery();
+            var query = Sql.Query.Join(Sql.Query.Separator, queries).ToSql(CreateCommand(), Config.Mappping);
+            return query.ExecuteNonQuery();
         }
 
         public IEnumerable<T> Query<T>(Query query, params Type[] types)
         {
             var command = query.ToSql(CreateCommand(), Config.Mappping);
 
-            var ret = new QueryResult<T>(Config.Mappping, command.ExecuteReader(), types);
+            var ret = new QueryResult<T>(Config.Mappping, command.ExecuteReader(), _transaction?.EntityTracker, types);
             _result = ret;
             return ret;
+        }
+
+        #region Queries
+
+        public T Insert<T>(T entity)
+        {
+            return Insert(new[] { entity })[0];
         }
 
         public List<T> Insert<T>(params T[] entities)
@@ -86,22 +93,38 @@ namespace Ptixed.Sql.Implementation
             return entities.ToList();
         }
 
+        public void Update(params object[] entities)
+        {
+            if (entities.Length == 0)
+                return;
+            NonQuery(QueryBuilder.Update(entities));
+        }
+
         public void Delete(params object[] entities)
         {
+            if (entities.Length == 0)
+                return;
             NonQuery(QueryBuilder.Delete(entities));
         }
+
+        public void Delete<T>(params object[] ids)
+        {
+            if (ids.Length == 0)
+                return;
+            NonQuery(QueryBuilder.Delete(typeof(T), ids));
+        }
+
+        #endregion
 
         private SqlCommand CreateCommand()
         {
             _result?.Dispose();
-            var command = new SqlCommand()
+            return Diagnostics.LastCommand = new SqlCommand()
             {
                 Connection = _connection.Value,
                 Transaction = _transaction.SqlTransaction,
                 CommandTimeout = (int)Config.CommandTimeout.TotalSeconds,
             };
-            Diagnostics.LastCommand = command;
-            return command;
         }
     }
 }

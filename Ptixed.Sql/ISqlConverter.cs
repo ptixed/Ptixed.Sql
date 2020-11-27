@@ -1,4 +1,5 @@
-﻿using Ptixed.Sql.Collections;
+﻿using Ptixed.Sql.Attributes;
+using Ptixed.Sql.Collections;
 using Ptixed.Sql.Metadata;
 using System.Collections.Generic;
 using System.Reflection;
