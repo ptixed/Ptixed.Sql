@@ -1,11 +1,11 @@
 ﻿using System;
-using Ptixed.Sql.Impl;
+using Ptixed.Sql.Implementation;
 
 namespace Ptixed.Sql.Tests
 {
     public class DatabaseFixture : IDisposable
     {
-        private readonly ConnectionConfig _config = new ConnectionConfig("Server=(local);initial catalog=Ptixed;Integrated Security=SSPI");
+        private readonly DatabaseConfig _config = new DatabaseConfig("Server=(local);initial catalog=Ptixed;Integrated Security=SSPI");
 
         public DatabaseFixture()
         {

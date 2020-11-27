@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using Ptixed.Sql.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace Ptixed.Sql.Meta
+namespace Ptixed.Sql.Metadata
 {
     public class LogicalColumn
     {

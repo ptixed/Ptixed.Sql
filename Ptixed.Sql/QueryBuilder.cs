@@ -1,9 +1,9 @@
 ﻿using System.Linq;
-using Ptixed.Sql.Meta;
+using Ptixed.Sql.Metadata;
 
 namespace Ptixed.Sql
 {
-    public static class QueryHelper
+    public static class QueryBuilder
     {
         public static Query GetById<T>(params object[] ids)
         {

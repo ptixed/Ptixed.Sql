@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Ptixed.Sql.Meta
+namespace Ptixed.Sql.Metadata
 {
     [AttributeUsage(AttributeTargets.Property)]
     public class RelationAttribute : Attribute

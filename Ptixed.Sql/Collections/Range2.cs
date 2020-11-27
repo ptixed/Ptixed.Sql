@@ -2,9 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Ptixed.Sql.Util
+namespace Ptixed.Sql.Collections
 {
-    public class Range2<T> : IEnumerable<Range<T>>
+    internal class Range2<T> : IEnumerable<Range<T>>
     {
         public readonly int Length1;
         public readonly int Length2;

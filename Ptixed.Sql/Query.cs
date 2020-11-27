@@ -1,4 +1,4 @@
-﻿using Ptixed.Sql.Meta;
+﻿using Ptixed.Sql.Metadata;
 using System;
 using System.Collections;
 using System.Collections.Generic;

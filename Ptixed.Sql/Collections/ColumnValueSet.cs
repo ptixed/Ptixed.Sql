@@ -4,10 +4,9 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading;
-using Ptixed.Sql.Impl;
-using Ptixed.Sql.Util;
+using Ptixed.Sql.Implementation;
 
-namespace Ptixed.Sql
+namespace Ptixed.Sql.Collections
 {
     public class ColumnValueSet : IEnumerable<ColumnValue>
     {
@@ -26,13 +25,13 @@ namespace Ptixed.Sql
         public object this[int key] => _values[key];
         public int Count => _values.Length;
 
-        public ColumnValueSet(Range<ColumnValue> values)
+        internal ColumnValueSet(Range<ColumnValue> values)
         {
             _values = values;
             _dict = new Lazy<Dictionary<string, object>>(() => _values.ToDictionary(x => x.Name, x => x.Value), LazyThreadSafetyMode.None);
         }
 
-        public ColumnValueSet(SqlDataReader reader)
+        internal ColumnValueSet(SqlDataReader reader)
         {
             var values = new ColumnValue[reader.FieldCount];
             for (var i = 0; i < reader.FieldCount; ++i)

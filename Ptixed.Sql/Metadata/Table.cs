@@ -3,9 +3,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Ptixed.Sql.Impl;
+using Ptixed.Sql.Implementation;
 
-namespace Ptixed.Sql.Meta
+namespace Ptixed.Sql.Metadata
 {
     public class Table
     {

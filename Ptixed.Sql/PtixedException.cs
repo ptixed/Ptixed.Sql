@@ -2,7 +2,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Ptixed.Sql.Impl
+namespace Ptixed.Sql
 {
     public class PtixedException : Exception
     {

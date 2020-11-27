@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using Ptixed.Sql.Meta;
+using Ptixed.Sql.Metadata;
 
 namespace Ptixed.Sql
 {
@@ -26,12 +25,9 @@ namespace Ptixed.Sql
             typeof(ushort), typeof(ushort?),
         };
 
-        private readonly ConcurrentDictionary<Type, Func<object, object>> _todb = new ConcurrentDictionary<Type, Func<object, object>>();
-        private readonly ConcurrentDictionary<Type, Func<object, object>> _fromdb = new ConcurrentDictionary<Type, Func<object, object>>();
-
         public object ToDb(Type type, object obj)
         {
-            var ret = type == null ? obj : _todb.GetOrAdd(type, ToDbImpl)(obj);
+            var ret = type == null ? null : Cache.Get(type, null, ToDbImpl).Value(obj);
             return ret ?? DBNull.Value;
         }
 
@@ -42,15 +38,15 @@ namespace Ptixed.Sql
 
         public object FromDb(Type type, object obj)
         {
-            return type == null ? obj : _fromdb.GetOrAdd(type, FromDbImpl)(obj);
+            return type == null ? obj : Cache.Get(type, null, FromDbImpl).Value(obj);
         }
 
         protected virtual Func<object, object> FromDbImpl(Type type)
         {
             if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
             {
-                var subconverter = _fromdb.GetOrAdd(type.GetGenericArguments()[0], FromDbImpl);
-                return x => x == null ? null : subconverter(x);
+                var subtype = type.GetGenericArguments()[0];
+                return x => x == null ? null : FromDb(subtype, x);
             }
 
             if (!type.IsEnum && typeof(IConvertible).IsAssignableFrom(type))

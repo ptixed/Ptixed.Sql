@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Reflection;
 using Newtonsoft.Json;
-using Ptixed.Sql.Meta;
+using Ptixed.Sql.Collections;
+using Ptixed.Sql.Metadata;
 
 namespace Ptixed.Sql.Tests.Specimens
 {

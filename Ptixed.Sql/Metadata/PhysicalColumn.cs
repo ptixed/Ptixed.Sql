@@ -1,4 +1,4 @@
-﻿namespace Ptixed.Sql.Meta
+﻿namespace Ptixed.Sql.Metadata
 {
     public class PhysicalColumn
     {

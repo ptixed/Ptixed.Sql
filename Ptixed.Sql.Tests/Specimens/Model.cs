@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using Ptixed.Sql.Impl;
-using Ptixed.Sql.Meta;
+using Ptixed.Sql.Implementation;
+using Ptixed.Sql.Metadata;
 
 namespace Ptixed.Sql.Tests.Specimens
 {

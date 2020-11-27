@@ -1,10 +1,10 @@
-﻿using Ptixed.Sql.Meta;
-using Ptixed.Sql.Util;
+﻿using Ptixed.Sql.Metadata;
+using Ptixed.Sql.Collections;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Ptixed.Sql.Impl
+namespace Ptixed.Sql.Implementation
 {
     public static class ModelMapper
     {

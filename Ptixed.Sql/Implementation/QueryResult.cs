@@ -3,9 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
-using Ptixed.Sql.Meta;
+using Ptixed.Sql.Collections;
+using Ptixed.Sql.Metadata;
 
-namespace Ptixed.Sql.Impl
+namespace Ptixed.Sql.Implementation
 {
     internal class QueryResult<T> : IEnumerable<T>, IDisposable
     {

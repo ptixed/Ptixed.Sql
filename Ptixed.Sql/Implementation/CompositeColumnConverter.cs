@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Ptixed.Sql.Meta;
+using Ptixed.Sql.Collections;
+using Ptixed.Sql.Metadata;
 
-namespace Ptixed.Sql.Impl
+namespace Ptixed.Sql.Implementation
 {
     public class CompositeColumnConverter : ISqlConverter
     {

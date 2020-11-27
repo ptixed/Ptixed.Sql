@@ -1,18 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 
 namespace Ptixed.Sql
 {
-    public interface IDatabase : IDisposable
+    public interface IDatabase : IQueryExecutor, IDisposable
     {
-        MappingConfig MappingConfig { get; }
+        DatabaseConfig Config { get; }
+        DatabaseDiagnostics Diagnostics { get; }
 
-        IEnumerable<T> Query<T>(Query query, params Type[] types);
-        int NonQuery(params Query[] query);
+        IDatabaseTransaction OpenTransaction(IsolationLevel? isolation = null);
 
-        IDatabaseTransaction OpenTransaction(IsolationLevel isolation);
-
-        void Reset();
+        void ResetConnection();
     }
 }
