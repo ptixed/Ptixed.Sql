@@ -12,7 +12,6 @@ namespace Ptixed.Sql
     public class Query
     {
         private readonly List<FormattableString> _parts =  new List<FormattableString>();
-        public bool IsEmpty => _parts.Count == 0;
 
         public TimeSpan? Timeout;
 
