@@ -2,7 +2,7 @@
 
 namespace Ptixed.Sql
 {
-    public interface IDatabaseTransaction : IQueryExecutor, IDisposable
+    public interface IDatabaseTransaction : IDisposable
     {
         void Commit();
     }

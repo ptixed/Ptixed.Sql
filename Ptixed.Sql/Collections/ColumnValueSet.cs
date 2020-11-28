@@ -42,8 +42,6 @@ namespace Ptixed.Sql.Collections
 
         public ColumnValueSet GetRange(int index, int count)
         {
-            if (index == 0 && count == _values.Length)
-                return this;
             return new ColumnValueSet(_values.GetRange(index, count));
         }
 

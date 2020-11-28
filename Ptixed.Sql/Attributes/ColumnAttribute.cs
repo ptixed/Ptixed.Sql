@@ -5,8 +5,9 @@ namespace Ptixed.Sql.Attributes
     [AttributeUsage(AttributeTargets.Property)]
     public class ColumnAttribute : Attribute
     {
-        public readonly string ColumnName;
         public bool IsAutoIncrement { get; set; }
+
+        public readonly string ColumnName;
 
         public ColumnAttribute(string name = null)
         {

@@ -71,29 +71,10 @@ namespace Ptixed.Sql.Implementation
             }));
         }
 
-        public static Query Delete(params object[] entities)
-        {
-            if (entities == null || entities.Length == 0)
-                return null;
-            
-            return Query.Join(Query.Separator, entities.Select(entity =>
-            {
-                var table = Table.Get(entity.GetType());
-                var id = table[entity, table.PrimaryKey];
-                
-                var query = new Query();
-                query.Append($"DELETE FROM {table} WHERE ");
-                query.Append(table.GetPrimaryKeyCondition(id));
-                return query;
-            }));
-        }
-
-        public static Query Delete(Type type, params object[] ids)
+        public static Query Delete(Table table, params object[] ids)
         {
             if (ids == null || ids.Length == 0)
                 return null;
-            
-            var table = Table.Get(type);
 
             var query = new Query();
             query.Append($"DELETE FROM {table} WHERE ");

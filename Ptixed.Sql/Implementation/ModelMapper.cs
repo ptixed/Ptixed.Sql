@@ -40,20 +40,26 @@ namespace Ptixed.Sql.Implementation
 
         private static object MapModel(MappingConfig config, ITracker tracker, Table table, ColumnValueSet columns)
         {
+            object pk = null;
+
             if (table.PrimaryKey != null)
+            {
                 if (table.PrimaryKey.PhysicalColumns.All(x => columns[x.Name] == null))
                     return null;
 
-            var pk = table.PrimaryKey.FromQuery(columns, config);
-            var old = tracker.Get(table, pk);
-            if (old != null)
-                return old;
+                pk = table.PrimaryKey.FromQuery(columns, config);
+                var old = tracker.Get(table, pk);
+                if (old != null)
+                    return old;
+            }
 
             var model = table.CreateNew();
             foreach (var column in table.LogicalColumns)
                 table[model, column] = column.FromQuery(columns, config);
 
-            tracker.Set(table, pk, model);
+            if (pk != null)
+                tracker.Set(table, pk, model);
+
             return model;
         }
 

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace Ptixed.Sql.Implementation
+namespace Ptixed.Sql.Implementation.Accessors
 {
     public class Accessor<TKey>
     {

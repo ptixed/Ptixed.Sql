@@ -3,24 +3,23 @@ using Ptixed.Sql.Metadata;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Linq;
 
 namespace Ptixed.Sql.Implementation
 {
-    internal class DatabaseTransaction : IDatabaseTransaction
+    internal class DatabaseTransaction : QueryExecutor, IDatabaseTransaction
     {
         public delegate void Disposed();
         public event Disposed OnDisposed;
-
-        private readonly IQueryExecutor _db;
+        
         public readonly SqlTransaction SqlTransaction;
         public readonly TransactionalTracker EntityTracker = new TransactionalTracker();
 
         private bool? _commited;
         private bool _disposed;
 
-        public DatabaseTransaction(IQueryExecutor db, SqlTransaction transaction)
+        public DatabaseTransaction(IDatabase db, SqlTransaction transaction) : base(db)
         {
-            _db = db;
             SqlTransaction = transaction;
         }
 
@@ -43,18 +42,16 @@ namespace Ptixed.Sql.Implementation
             {
                 _disposed = true;
                 OnDisposed?.Invoke();
+                SqlTransaction.Dispose();
             }
         }
 
-        public int NonQuery(params Query[] queries)
+        public override int NonQuery(IEnumerable<Query> queries)
         {
             if (_commited.HasValue)
                 throw PtixedException.InvalidTransacionState(_commited.Value ? "committed" : "rolledback");
 
-            var qs = new List<Query>();
-            qs.Add(EntityTracker.PrepareChangesQuery());
-            qs.AddRange(queries);
-            return _db.NonQuery(qs.ToArray());
+            return base.NonQuery(EntityTracker.Flush().Concat(queries));
         }
 
         public IEnumerable<T> Query<T>(Query query, params Type[] types)
@@ -62,60 +59,26 @@ namespace Ptixed.Sql.Implementation
             if (_commited.HasValue)
                 throw PtixedException.InvalidTransacionState(_commited.Value ? "committed" : "rolledback");
 
-            var changes = EntityTracker.PrepareChangesQuery();
-            changes.Append(Sql.Query.Separator);
-            changes.Append(query);
-
-            // keep object copies 
-            // first i must fix map so it won't produce copies
-
-            // var entities = _db.Query<T>(changes, types);
-
-            throw new NotImplementedException();
+            var queries = EntityTracker.Flush();
+            queries.Add(query);            
+            return base.Query<T>(Sql.Query.Join(Sql.Query.Separator, queries), types);
         }
 
-        #region Queries
-
-        public T Insert<T>(T entity)
+        public override List<T> Insert<T>(params T[] entities)
         {
-            return Insert(new[] { entity })[0];
+            return base.Insert(entities);
         }
 
-        public List<T> Insert<T>(params T[] entities)
-        {
-            if (entities.Length == 0)
-                return new List<T>();
-
-            // PrepareChangesQuery() + Database.Insert + tracker
-
-            // 
-
-            throw new NotImplementedException();
-        }
-
-        public void Update(params object[] entities)
-        {
-            // PrepareChangesQuery() +  Database.Update
-
-            throw new NotImplementedException();
-        }
-
-        public void Delete(params object[] entities)
+        public override void Update(IEnumerable<object> entities)
         {
             foreach (var entity in entities)
-            {
-                var table = Table.Get(entity.GetType());
-                EntityTracker.ScheduleDelete(table, table[entity, table.PrimaryKey]);
-            }
+                EntityTracker.ScheduleUpdate(entity);
         }
 
-        public void Delete<T>(params object[] ids)
+        public override void Delete(IEnumerable<(Table table, object id)> keys)
         {
-            var table = Table.Get(typeof(T));
-            foreach (var id in ids)
+            foreach (var (table, id) in keys)
                 EntityTracker.ScheduleDelete(table, id);
         }
-
-        #endregion
     }
 }

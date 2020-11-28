@@ -9,7 +9,7 @@ namespace Ptixed.Sql.Collections
         public readonly int Length;
 
         private readonly int _offset;
-        private readonly IList<T> _array;
+        private readonly T[] _array;
 
         public T this[int index]
         {
@@ -27,14 +27,14 @@ namespace Ptixed.Sql.Collections
             }
         }
 
-        public Range(IList<T> array)
+        public Range(T[] array)
         {
             _array = array;
             _offset = 0;
-            Length = array.Count;
+            Length = array.Length;
         }
 
-        public Range(IList<T> array, int offset, int length)
+        public Range(T[] array, int offset, int length)
         {
             _array = array;
             _offset = offset;
