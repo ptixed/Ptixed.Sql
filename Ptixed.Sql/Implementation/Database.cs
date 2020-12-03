@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using System.Linq;
 using System.Threading;
 
 namespace Ptixed.Sql.Implementation
@@ -14,7 +13,7 @@ namespace Ptixed.Sql.Implementation
         private DatabaseTransaction _transaction;
 
         private IQueryExecutor Executor => _transaction ?? DefaultQueryExecutor;
-        private IQueryExecutor DefaultQueryExecutor;
+        private readonly IQueryExecutor DefaultQueryExecutor;
 
         public DatabaseConfig Config { get; }
         public DatabaseDiagnostics Diagnostics { get; } = new DatabaseDiagnostics();
@@ -65,24 +64,12 @@ namespace Ptixed.Sql.Implementation
             };
         }
 
-        public int NonQuery(params Query[] queries) => Executor.NonQuery(queries);
-        public IEnumerable<T> Query<T>(Query query, params Type[] types) => Executor.Query<T>(query, types);
+        public IEnumerable<T> Query<T>(Query query, params Table[] types) => Executor.Query<T>(query, types);
+        public int NonQuery(IEnumerable<Query> queries) => Executor.NonQuery(queries);
 
-        public T Insert<T>(T entity) => Insert(new[] { entity })[0];
-        public List<T> Insert<T>(params T[] entities) => Executor.Insert(entities);
-        public void Update(params object[] entities) => Executor.Update(entities);
-        public void Delete(params object[] entities)
-        {
-            Executor.Delete(entities.Select(x =>
-            {
-                var table = Table.Get(x.GetType());
-                return (table, table[x, table.PrimaryKey]);
-            }));
-        }
-        public void Delete<T>(params object[] ids)
-        {
-            var table = Table.Get(typeof(T));
-            Executor.Delete(ids.Select(x => (table, x)));
-        }
+        public List<T> GetById<T>(IEnumerable<object> ids) => Executor.GetById<T>(ids);
+        public void Insert(IEnumerable<object> entities) => Executor.Insert(entities);
+        public void Update(IEnumerable<object> entities) => Executor.Update(entities);
+        public void Delete(IEnumerable<(Table table, object id)> deletes) => Executor.Delete(deletes);
     }
 }

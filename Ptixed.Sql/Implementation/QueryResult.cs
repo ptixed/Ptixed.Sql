@@ -15,15 +15,15 @@ namespace Ptixed.Sql.Implementation
         private readonly MappingConfig _config;
         private readonly SqlDataReader _reader;
         private readonly ITracker _tracker;
-        private readonly Type[] _types;
+        private readonly Table[] _subtables;
         private readonly List<T> _result;
 
-        public QueryResult(MappingConfig config, SqlDataReader reader, ITracker tracker, Type[] types)
+        public QueryResult(MappingConfig config, SqlDataReader reader, ITracker tracker, Table[] subtables)
         {
             _config = config;
             _reader = reader;
             _tracker = tracker ?? new DefaultTracker();
-            _types = types.Length > 0 ? types : new[] { typeof(T) };
+            _subtables = subtables;
 
             try
             {
@@ -42,7 +42,7 @@ namespace Ptixed.Sql.Implementation
 
         private IEnumerator<T> GetResultEnumerator()
         {
-            if (_types.Length > 1)
+            if (_subtables.Length > 0)
                 return new ModelGraphEnumerator(this);
 
             var type = typeof(T);
@@ -73,7 +73,8 @@ namespace Ptixed.Sql.Implementation
 
         private class ModelGraphEnumerator : EnumeratorBase
         {
-            private readonly Table _accessor;
+            private readonly Table[] _tables;
+            private readonly Type[] _types;
 
             private ColumnValueSet _columns;
             private bool _consumed = true;
@@ -81,7 +82,12 @@ namespace Ptixed.Sql.Implementation
             public ModelGraphEnumerator(QueryResult<T> result)
                 : base(result)
             {
-                _accessor = Table.Get(typeof(T));
+                var tables = new List<Table>();
+                tables.Add(typeof(T));
+                tables.AddRange(result._subtables);
+                _tables = tables.ToArray();
+
+                _types = _tables.Select(x => x.Type).ToArray();
             }
 
             public override bool MoveNext()
@@ -89,28 +95,28 @@ namespace Ptixed.Sql.Implementation
                 if (!ReadRow())
                     return false;
 
-                var current = ModelMapper.Map(Result._config, Result._tracker, Result._types, _columns);
+                var current = ModelMapper.Map(Result._config, Result._tracker, _types, _columns);
                 _consumed = true;
 
-                if (_accessor.PrimaryKey == null)
+                if (_tables[0].PrimaryKey == null)
                 {
                     Current = (T)current.Single();
                     return true;
                 }
 
-                var currentpk = _accessor[current[0], _accessor.PrimaryKey];
+                var currentpk = _tables[0][current[0], _tables[0].PrimaryKey];
                 var objs = new List<object[]> { current };
 
                 while (ReadRow())
                 {
-                    var next = ModelMapper.Map(Result._config, Result._tracker, Result._types, _columns);
-                    if (currentpk?.Equals(_accessor[next[0], _accessor.PrimaryKey]) != true)
+                    var next = ModelMapper.Map(Result._config, Result._tracker, _types, _columns);
+                    if (currentpk?.Equals(_tables[0][next[0], _tables[0].PrimaryKey]) != true)
                         break;
                     objs.Add(next);
                     _consumed = true;
                 }
 
-                Current = (T)ModelMapper.ConsructObjectGraph(Result._types, objs).SingleOrDefault();
+                Current = (T)ModelMapper.ConsructObjectGraph(_tables, objs).SingleOrDefault();
                 return true;
             }
 

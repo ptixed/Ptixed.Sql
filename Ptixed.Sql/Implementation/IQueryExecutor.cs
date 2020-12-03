@@ -1,16 +1,16 @@
 ﻿using Ptixed.Sql.Metadata;
-using System;
 using System.Collections.Generic;
 
 namespace Ptixed.Sql.Implementation
 {
-    internal interface IQueryExecutor
+    public interface IQueryExecutor
     {
-        QueryResult<T> Query<T>(Query query, IEnumerable<Type> types);
+        IEnumerable<T> Query<T>(Query query, params Table[] tables);
         int NonQuery(IEnumerable<Query> queries);
 
-        List<T> Insert<T>(params T[] entities);
+        List<T> GetById<T>(IEnumerable<object> ids);
+        void Insert(IEnumerable<object> entities);
         void Update(IEnumerable<object> entities);
-        void Delete(IEnumerable<(Table table, object id)> keys);
+        void Delete(IEnumerable<(Table table, object id)> deletes);
     }
 }

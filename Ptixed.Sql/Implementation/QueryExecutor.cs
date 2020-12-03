@@ -15,46 +15,61 @@ namespace Ptixed.Sql.Implementation
             _db = db;
         }
 
+        public virtual IEnumerable<T> Query<T>(Query query, params Table[] tables)
+        {
+            if (query.IsEmpty)
+                return Enumerable.Empty<T>();
+            var command = query.ToSql(_db.CreateCommand(), _db.Config.Mappping);
+            return new QueryResult<T>(_db.Config.Mappping, command.ExecuteReader(), new DefaultTracker(), tables);
+        }
+
         public virtual int NonQuery(IEnumerable<Query> queries)
         {
-            if (!queries.Any())
+            var query = Sql.Query.Join(Sql.Query.Separator, queries);
+            if (query.IsEmpty)
                 return 0;
-
-            var query = Sql.Query.Join(Sql.Query.Separator, queries).ToSql(_db.CreateCommand(), _db.Config.Mappping);
-            return query.ExecuteNonQuery();
+            return query.ToSql(_db.CreateCommand(), _db.Config.Mappping).ExecuteNonQuery();
         }
 
-        public virtual QueryResult<T> Query<T>(Query query, IEnumerable<Type> types)
+        public virtual List<T> GetById<T>(IEnumerable<object> ids)
         {
-            var command = query.ToSql(_db.CreateCommand(), _db.Config.Mappping);
-            return new QueryResult<T>(_db.Config.Mappping, command.ExecuteReader(), new DefaultTracker(), types.ToArray());
+            return Query<T>(QueryBuilder.GetById<T>(ids), typeof(T)).ToList();
         }
 
-        public virtual List<T> Insert<T>(params T[] entities)
+        public virtual void Insert(IEnumerable<object> entities)
         {
-            if (entities.Length == 0)
-                return new List<T>();
+            Type last = null;
+            var batch = new List<object>();
 
-            var result = Query<T>(QueryBuilder.Insert(entities), new[] { typeof(T) }).ToList();
-            var table = Table.Get(typeof(T));
+            void ExecuteBatch()
+            {
+                var table = Table.Get(last);                
+                var result = Query<object>(QueryBuilder.Insert(entities), last);
+                foreach (var (entity, created) in batch.Zip(result, (x, y) => (x, y)))
+                    table.Copy(created, entity); // todo: map directly to destination object instead of making a copy
+                batch = new List<object>();
+            }
 
-            if (table.AutoIncrementColumn != null)
-                foreach (var (inserted, i) in result.Select((x, i) => (x, i)))
-                    table[entities[i], table.AutoIncrementColumn.LogicalColumn] = table[inserted, table.AutoIncrementColumn.LogicalColumn];
-
-            return entities.ToList();
+            foreach (var entity in entities)
+            {
+                if (last == null || last == entity.GetType())
+                    batch.Add(entity);
+                else
+                    ExecuteBatch();
+                last = entity.GetType();
+            }
+            if (batch.Count > 0)
+                ExecuteBatch();
         }
 
         public virtual void Update(IEnumerable<object> entities)
         {
-            if (!entities.Any())
-                return;
             NonQuery(new[] { QueryBuilder.Update(entities) });
         }
 
-        public virtual void Delete(IEnumerable<(Table table, object id)> keys)
+        public virtual void Delete(IEnumerable<(Table table, object id)> deletes)
         {
-            NonQuery(keys.Select(x => QueryBuilder.Delete(x.table, x.id)));
+            NonQuery(new[] { QueryBuilder.Delete(deletes) });
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using Ptixed.Sql.Implementation.Trackers;
 using Ptixed.Sql.Metadata;
-using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
@@ -13,7 +12,7 @@ namespace Ptixed.Sql.Implementation
         public event Disposed OnDisposed;
         
         public readonly SqlTransaction SqlTransaction;
-        public readonly TransactionalTracker EntityTracker = new TransactionalTracker();
+        public readonly TransactionalTracker Tracker = new TransactionalTracker();
 
         private bool? _commited;
         private bool _disposed;
@@ -46,39 +45,67 @@ namespace Ptixed.Sql.Implementation
             }
         }
 
+        private void CheckStatus()
+        {
+            if (_commited.HasValue)
+                throw PtixedException.InvalidTransacionState(_commited.Value ? "committed" : "rolledback");
+        }
+
+        #region QueryExecutor
+
+        public override IEnumerable<T> Query<T>(Query query, params Table[] tables)
+        {
+            CheckStatus();
+
+            var queries = Tracker.Flush();
+            queries.Add(query);
+            return base.Query<T>(Sql.Query.Join(Sql.Query.Separator, queries), tables);
+        }
+
         public override int NonQuery(IEnumerable<Query> queries)
         {
-            if (_commited.HasValue)
-                throw PtixedException.InvalidTransacionState(_commited.Value ? "committed" : "rolledback");
+            CheckStatus();
 
-            return base.NonQuery(EntityTracker.Flush().Concat(queries));
+            return base.NonQuery(Tracker.Flush().Concat(queries));
         }
 
-        public IEnumerable<T> Query<T>(Query query, params Type[] types)
+        public override List<T> GetById<T>(IEnumerable<object> ids)
         {
-            if (_commited.HasValue)
-                throw PtixedException.InvalidTransacionState(_commited.Value ? "committed" : "rolledback");
+            var result = new List<T>();
+            var missing = new List<object>();
 
-            var queries = EntityTracker.Flush();
-            queries.Add(query);            
-            return base.Query<T>(Sql.Query.Join(Sql.Query.Separator, queries), types);
+            foreach (var id in ids)
+            {
+                var cached = Tracker.Get(typeof(T), id);
+                if (cached == null)
+                    missing.Add(id);
+                else
+                    result.Add((T)cached);
+            }
+
+            if (missing.Any())
+                result.AddRange(base.GetById<T>(missing));
+
+            return result;
         }
 
-        public override List<T> Insert<T>(params T[] entities)
+        public override void Insert(IEnumerable<object> entities)
         {
-            return base.Insert(entities);
+            base.Insert(entities);
         }
 
         public override void Update(IEnumerable<object> entities)
         {
             foreach (var entity in entities)
-                EntityTracker.ScheduleUpdate(entity);
+                Tracker.ScheduleUpdate(entity);
         }
 
         public override void Delete(IEnumerable<(Table table, object id)> keys)
         {
             foreach (var (table, id) in keys)
-                EntityTracker.ScheduleDelete(table, id);
+                Tracker.ScheduleDelete(table, id);
         }
+
+        #endregion
     }
 }

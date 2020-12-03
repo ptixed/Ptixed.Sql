@@ -64,6 +64,8 @@ namespace Ptixed.Sql.Metadata
                 .ToDictionary(x => x.SlotType);
         }
 
+        public static implicit operator Table(Type type) => Get(type);
+
         public static bool operator ==(Table l, Table r) => l?.Equals(r) ?? ReferenceEquals(r, null);
         public static bool operator !=(Table l, Table r) => !(l == r);
 
@@ -73,11 +75,21 @@ namespace Ptixed.Sql.Metadata
 
         public object CreateNew() => _accessor.CreateNew();
 
+        public void Copy(object source, object destination)
+        {
+            foreach (var column in LogicalColumns)
+            {
+                var old = this[destination, column];
+                var neu = this[source, column];
+                if (!Equals(old, neu))
+                    this[destination, column] = neu;
+            }
+        }
+
         public object Clone(object original)
         {
             var clone = CreateNew();
-            foreach (var column in LogicalColumns)
-                this[clone, column] = this[original, column];
+            Copy(original, clone);
             return clone;
         }
 

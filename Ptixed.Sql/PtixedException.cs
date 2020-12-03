@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace Ptixed.Sql
 {
-    public class PtixedException : Exception
+    internal class PtixedException : Exception
     {
         public readonly object Context;
         

@@ -30,7 +30,7 @@ namespace Ptixed.Sql.Tests
                     , primary key (Id)
                     )");
 
-                db.NonQuery(drop1, create1, drop2, create2);
+                db.NonQuery(new[] { drop1, create1, drop2, create2 });
             }
         }
 

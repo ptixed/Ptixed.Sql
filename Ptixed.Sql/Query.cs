@@ -11,7 +11,9 @@ namespace Ptixed.Sql
 {
     public class Query
     {
-        public static readonly Query Separator = new Query($"\n\n");
+        public static readonly Query Separator = new Query($";\n");
+
+        public bool IsEmpty => _parts.Count == 0;
 
         private readonly List<FormattableString> _parts =  new List<FormattableString>();
 

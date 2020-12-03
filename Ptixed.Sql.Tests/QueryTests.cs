@@ -254,9 +254,28 @@ namespace Ptixed.Sql.Tests
                 var q1 = new Query($"DELETE FROM Model2 WHERE Id = 1");
                 var q2 = new Query($"DELETE FROM Model2 WHERE Id = 2");
 
-                var affected = db.NonQuery(q1, q2);
+                var affected = db.NonQuery(new[] { q1, q2 });
 
                 Assert.Equal(2, affected);
+            }
+        }
+
+        [Fact]
+        public void TestTracker()
+        {
+            using (var db = _db.OpenConnection())
+            {
+                var m = new Model();
+
+                using (var tran = db.OpenTransaction())
+                {
+                    db.Insert(m);
+                    m.Temp = "test";
+                    tran.Commit();
+                }
+
+                var m1 = db.GetById<Model>(m.Id);
+                Assert.Equal("test", m1.Temp);
             }
         }
     }

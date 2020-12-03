@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Ptixed.Sql.Implementation;
+using System;
 using System.Data;
 using System.Data.SqlClient;
 
 namespace Ptixed.Sql
 {
-    public interface IDatabase : IDisposable
+    public interface IDatabase : IQueryExecutor, IDisposable
     {
         DatabaseConfig Config { get; }
         DatabaseDiagnostics Diagnostics { get; }
@@ -13,14 +13,5 @@ namespace Ptixed.Sql
         IDatabaseTransaction OpenTransaction(IsolationLevel? isolation = null);
         SqlCommand CreateCommand();
         void ResetConnection();
-
-        IEnumerable<T> Query<T>(Query query, params Type[] types);
-        int NonQuery(params Query[] queries);
-
-        T Insert<T>(T entity);
-        List<T> Insert<T>(params T[] entities);
-        void Update(params object[] entities);
-        void Delete(params object[] entities);
-        void Delete<T>(params object[] ids);
     }
 }

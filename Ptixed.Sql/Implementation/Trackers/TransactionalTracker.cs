@@ -1,4 +1,5 @@
 ﻿using Ptixed.Sql.Metadata;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -36,7 +37,7 @@ namespace Ptixed.Sql.Implementation.Trackers
             var queries = new List<Query>();
             queries.Add(new Query($"SET NOCOUNT ON"));
 
-            queries.AddRange(FlushDeletes());
+            queries.Add(FlushDeletes());
             queries.AddRange(FlushUpdates());
             if (queries.Count == 1)
                 return new List<Query>();
@@ -45,42 +46,36 @@ namespace Ptixed.Sql.Implementation.Trackers
             return queries;
         }
 
-        private IEnumerable<Query> FlushDeletes()
+        private Query FlushDeletes()
         {
-            foreach (var delete in _deletes)
-            {
-                yield return QueryBuilder.Delete(delete.table, delete.id);
-                if (_commited.Remove(delete))
-                    _uncommited.Remove(delete);
-            }
+            var query = QueryBuilder.Delete(_deletes);
             _deletes.Clear();
+            return query;
         }
 
         private IEnumerable<Query> FlushUpdates()
         {
-            foreach (var (key, entity) in _uncommited)
+            foreach (var (key, uncommited) in _uncommited.ToList())
             {
                 var (table, id) = key;
-                var old = _commited[key];
+                var commited = _commited[key];
 
-                if (old == null)
-                    yield return QueryBuilder.Update(entity);
+                if (commited == null)
+                    yield return QueryBuilder.Update(new[] { uncommited });
                 else
                 {
                     var columns = new List<LogicalColumn>();
                     foreach (var column in table.LogicalColumns)
-                        if (!Equals(table[entity, column], table[old, column]))
+                        if (!Equals(table[uncommited, column], table[commited, column]))
                             columns.Add(column);
 
                     if (!columns.Any())
                         continue;
 
                     var values = columns
-                        .SelectMany(column => column.FromEntityToQuery(entity))
+                        .SelectMany(column => column.FromEntityToQuery(uncommited))
                         .Select(column => new Query($"{column} = {column.Value}"))
                         .ToList();
-
-                    // pk updates
 
                     var query = new Query();
                     query.Append($"UPDATE {table} SET ");
@@ -90,7 +85,11 @@ namespace Ptixed.Sql.Implementation.Trackers
                     yield return query;
                 }
 
-                _commited[key] = table.Clone(entity);
+                _uncommited.Remove(key);
+
+                var newkey = (table, table[commited, table.PrimaryKey]);
+                _uncommited[newkey] = uncommited;
+                _commited[newkey] = table.Clone(uncommited);
             }
         }
     }

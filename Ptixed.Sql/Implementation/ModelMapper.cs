@@ -48,9 +48,9 @@ namespace Ptixed.Sql.Implementation
                     return null;
 
                 pk = table.PrimaryKey.FromQuery(columns, config);
-                var old = tracker.Get(table, pk);
-                if (old != null)
-                    return old;
+                var cached = tracker.Get(table, pk);
+                if (cached != null)
+                    return cached;
             }
 
             var model = table.CreateNew();
@@ -68,22 +68,22 @@ namespace Ptixed.Sql.Implementation
             return config.FromDb(type, columns.Single().Value);
         }
 
-        public static List<object> ConsructObjectGraph(Type[] types, List<object[]> rows)
+        public static List<object> ConsructObjectGraph(Table[] tables, List<object[]> rows)
         {
             if (!rows.Any())
                 return new List<object>();
-            return ConstructNode(new Range<Type>(types), new Range2<object>(rows.ToArray(), rows.Count, rows[0].Length)).ToList();
+            return ConstructNode(new Range<Table>(tables), new Range2<object>(rows.ToArray(), rows.Count, rows[0].Length)).ToList();
         }
 
-        private static IEnumerable<object> ConstructNode(Range<Type> types, Range2<object> rows)
+        private static IEnumerable<object> ConstructNode(Range<Table> tables, Range2<object> rows)
         {
-            var table = Table.Get(types[0]);
+            var table = tables[0];
 
             var relations = new List<(int index, Relation relation)>();
-            for (int i = 1; i < types.Length; ++i)
-                if (table.Relations.TryGetValue(types[i], out Relation r))
+            for (int i = 1; i < tables.Length; ++i)
+                if (table.Relations.TryGetValue(tables[i].Type, out Relation r))
                     relations.Add((i, r));
-            relations.Add((types.Length, null));
+            relations.Add((tables.Length, null));
 
             var roots = new List<(int index, object pk)>();
             object pk = null;
@@ -112,7 +112,7 @@ namespace Ptixed.Sql.Implementation
 
                 for (var rei = 0; rei < relations.Count - 1; ++rei)
                 {
-                    var subts = types.GetRange(relations[rei].index, relations[rei + 1].index - relations[rei].index);
+                    var subts = tables.GetRange(relations[rei].index, relations[rei + 1].index - relations[rei].index);
                     var subrows = rows.GetRange(
                         roots[roi].index,
                         roots[roi + 1].index - roots[roi].index,
@@ -122,7 +122,7 @@ namespace Ptixed.Sql.Implementation
                     var nodes = ConstructNode(subts, subrows).ToList();
                     relations[rei].relation.SetValue(root, nodes);
 
-                    if (Table.Get(subts[0]).Relations.TryGetValue(types[0], out Relation reverse))
+                    if (subts[0].Relations.TryGetValue(tables[0].Type, out Relation reverse))
                         foreach (var node in nodes)
                             reverse.SetValue(node, new List<object> { root });
                 }

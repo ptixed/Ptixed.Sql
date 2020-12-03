@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Ptixed.Sql.Metadata;
 
@@ -6,34 +6,27 @@ namespace Ptixed.Sql.Implementation
 {
     internal static class QueryBuilder
     {
-        public static Query GetById<T>(params object[] ids)
+        public static Query GetById<T>(IEnumerable<object> ids)
         {
-            if (ids == null || ids.Length == 0)
-                return null;
-            
             var table = Table.Get(typeof(T));
+
+            var condition = Query.Join(new Query($" OR "), ids.Select(id => table.GetPrimaryKeyCondition(id)));
+
+            if (condition.IsEmpty)
+                return condition;
 
             var query = new Query();
             query.Append($"SELECT * FROM {table} WHERE ");
-            query.Append($" OR ", ids.Select(id => table.GetPrimaryKeyCondition(id)));
+            query.Append(condition);
             return query;
         }
 
-        public static Query Insert<T>(params T[] entities)
+        public static Query Insert<T>(IEnumerable<T> entities)
         {
-            if (entities == null || entities.Length == 0)
-                return null;
-            
             var table = Table.Get(typeof(T));
             var columns = table.PhysicalColumns.Except(new[] { table.AutoIncrementColumn }).ToList<PhysicalColumn>();
 
-            var query = new Query();
-            query.Append($"INSERT INTO {table} (");
-            query.Append($", ", columns.Select(x => new Query($"{x}")));
-            query.Append($") OUTPUT ");
-            query.Append($", ", table.PhysicalColumns.Select(column => new Query($"INSERTED.{column}")));
-            query.Append($"VALUES ");
-            query.Append($", ", entities.Select(entity => 
+            var inserts = Query.Join(new Query($", "), entities.Select(entity =>
             {
                 var values = table.ToQuery(columns, entity)
                     .Select(column => new Query($"{column.Value}"))
@@ -45,14 +38,22 @@ namespace Ptixed.Sql.Implementation
                 q.Append($")");
                 return q;
             }));
+
+            if (inserts.IsEmpty)
+                return inserts;
+
+            var query = new Query();
+            query.Append($"INSERT INTO {table} (");
+            query.Append($", ", columns.Select(x => new Query($"{x}")));
+            query.Append($") OUTPUT ");
+            query.Append($", ", table.PhysicalColumns.Select(column => new Query($"INSERTED.{column}")));
+            query.Append($"VALUES ");
+            query.Append(inserts);
             return query;
         }
 
-        public static Query Update(params object[] entities)
+        public static Query Update(IEnumerable<object> entities)
         {
-            if (entities == null || entities.Length == 0)
-                return null;
-            
             return Query.Join(Query.Separator, entities.Select(entity =>
             {
                 var table = Table.Get(entity.GetType());
@@ -71,15 +72,13 @@ namespace Ptixed.Sql.Implementation
             }));
         }
 
-        public static Query Delete(Table table, params object[] ids)
+        public static Query Delete(IEnumerable<(Table table, object id)> deletes)
         {
-            if (ids == null || ids.Length == 0)
-                return null;
-
-            var query = new Query();
-            query.Append($"DELETE FROM {table} WHERE ");
-            query.Append($" OR ", ids.Select(id => table.GetPrimaryKeyCondition(id)));
-            return query;
+            return Query.Join(Query.Separator, deletes.Select(x =>
+            {
+                var condition = x.table.GetPrimaryKeyCondition(x.id);
+                return new Query($"DELETE FROM {x.table} WHERE ").Append(condition);
+            }));
         }
     }
 }
