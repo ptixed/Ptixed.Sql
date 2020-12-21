@@ -1,6 +1,5 @@
 ﻿using Ptixed.Sql.Attributes;
 using System;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Ptixed.Sql.Tests.Specimens
 {
@@ -23,7 +22,6 @@ namespace Ptixed.Sql.Tests.Specimens
         public Guid QuestionId { get; set; }
 
         public override bool Equals(object obj) => obj is ModelKey other && other.ClientId == ClientId && QuestionId == other.QuestionId;
-        [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
         public override int GetHashCode() => ClientId ^ QuestionId.GetHashCode();
     }
 }

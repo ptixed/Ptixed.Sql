@@ -59,16 +59,16 @@ namespace Ptixed.Sql.Implementation
             return Diagnostics.LastCommand = new SqlCommand()
             {
                 Connection = _connection.Value,
-                Transaction = _transaction.SqlTransaction,
+                Transaction = _transaction?.SqlTransaction,
                 CommandTimeout = (int)Config.CommandTimeout.TotalSeconds,
             };
         }
 
-        public IEnumerable<T> Query<T>(Query query, params Table[] types) => Executor.Query<T>(query, types);
+        public IEnumerable<T> Query<T>(Query query, params Type[] types) => Executor.Query<T>(query, types);
         public int NonQuery(IEnumerable<Query> queries) => Executor.NonQuery(queries);
 
         public List<T> GetById<T>(IEnumerable<object> ids) => Executor.GetById<T>(ids);
-        public void Insert(IEnumerable<object> entities) => Executor.Insert(entities);
+        public void Insert<T>(IEnumerable<T> entities) => Executor.Insert(entities);
         public void Update(IEnumerable<object> entities) => Executor.Update(entities);
         public void Delete(IEnumerable<(Table table, object id)> deletes) => Executor.Delete(deletes);
     }

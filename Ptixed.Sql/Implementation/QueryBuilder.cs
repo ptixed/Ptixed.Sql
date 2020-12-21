@@ -9,76 +9,47 @@ namespace Ptixed.Sql.Implementation
         public static Query GetById<T>(IEnumerable<object> ids)
         {
             var table = Table.Get(typeof(T));
-
-            var condition = Query.Join(new Query($" OR "), ids.Select(id => table.GetPrimaryKeyCondition(id)));
-
-            if (condition.IsEmpty)
-                return condition;
-
             var query = new Query();
             query.Append($"SELECT * FROM {table} WHERE ");
-            query.Append(condition);
+            query.Append($" OR ", ids.Select(id => table.GetPrimaryKeyCondition(id)));
             return query;
         }
 
-        public static Query Insert<T>(IEnumerable<T> entities)
+        public static Query Insert(object entity)
         {
-            var table = Table.Get(typeof(T));
+            var table = Table.Get(entity.GetType());
             var columns = table.PhysicalColumns.Except(new[] { table.AutoIncrementColumn }).ToList<PhysicalColumn>();
-
-            var inserts = Query.Join(new Query($", "), entities.Select(entity =>
-            {
-                var values = table.ToQuery(columns, entity)
-                    .Select(column => new Query($"{column.Value}"))
-                    .ToList();
-
-                var q = new Query();
-                q.Append($"(");
-                q.Append($", ", values);
-                q.Append($")");
-                return q;
-            }));
-
-            if (inserts.IsEmpty)
-                return inserts;
 
             var query = new Query();
             query.Append($"INSERT INTO {table} (");
             query.Append($", ", columns.Select(x => new Query($"{x}")));
-            query.Append($") OUTPUT ");
-            query.Append($", ", table.PhysicalColumns.Select(column => new Query($"INSERTED.{column}")));
-            query.Append($"VALUES ");
-            query.Append(inserts);
+            query.Append($") OUTPUT INSERTED.* VALUES (");
+            query.Append($", ", table.ToQuery(columns, entity).Select(column => new Query($"{column.Value}")));
+            query.Append($")");
             return query;
         }
 
-        public static Query Update(IEnumerable<object> entities)
+        public static Query Update(object entity)
         {
-            return Query.Join(Query.Separator, entities.Select(entity =>
-            {
-                var table = Table.Get(entity.GetType());
-                var columns = table.PhysicalColumns.Where(x => !x.IsPrimaryKey).ToList<PhysicalColumn>();
+            var table = Table.Get(entity.GetType());
+            var columns = table.PhysicalColumns.Where(x => !x.IsPrimaryKey).ToList<PhysicalColumn>();
 
-                var values = table.ToQuery(columns, entity)
-                    .Select(column => new Query($"{column} = {column.Value}"))
-                    .ToList();
+            var values = table.ToQuery(columns, entity)
+                .Select(column => new Query($"{column} = {column.Value}"))
+                .ToList();
                 
-                var query = new Query();
-                query.Append($"UPDATE {table} SET ");
-                query.Append($", ", values);
-                query.Append($" WHERE ");
-                query.Append(table.GetPrimaryKeyCondition(table[entity, table.PrimaryKey]));                
-                return query;
-            }));
+            var query = new Query();
+            query.Append($"UPDATE {table} SET ");
+            query.Append($", ", values);
+            query.Append($" WHERE ");
+            query.Append(table.GetPrimaryKeyCondition(table[entity, table.PrimaryKey]));                
+            return query;
         }
 
-        public static Query Delete(IEnumerable<(Table table, object id)> deletes)
+        public static Query Delete(Table table, object id)
         {
-            return Query.Join(Query.Separator, deletes.Select(x =>
-            {
-                var condition = x.table.GetPrimaryKeyCondition(x.id);
-                return new Query($"DELETE FROM {x.table} WHERE ").Append(condition);
-            }));
+            var condition = table.GetPrimaryKeyCondition(id);
+            return new Query($"DELETE FROM {table} WHERE ").Append(condition);
         }
     }
 }

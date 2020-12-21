@@ -1,5 +1,4 @@
 ﻿using Ptixed.Sql.Metadata;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -19,7 +18,7 @@ namespace Ptixed.Sql.Implementation.Trackers
 
         public void Set(Table table, object id, object entity)
         {
-            _commited[(table, id)] = entity;
+            _commited[(table, id)] = table.Clone(entity);
             _uncommited[(table, id)] = entity;
         }
 
@@ -37,7 +36,7 @@ namespace Ptixed.Sql.Implementation.Trackers
             var queries = new List<Query>();
             queries.Add(new Query($"SET NOCOUNT ON"));
 
-            queries.Add(FlushDeletes());
+            queries.AddRange(FlushDeletes());
             queries.AddRange(FlushUpdates());
             if (queries.Count == 1)
                 return new List<Query>();
@@ -46,11 +45,11 @@ namespace Ptixed.Sql.Implementation.Trackers
             return queries;
         }
 
-        private Query FlushDeletes()
+        private IEnumerable<Query> FlushDeletes()
         {
-            var query = QueryBuilder.Delete(_deletes);
+            foreach (var (table, id) in _deletes)
+                yield return QueryBuilder.Delete(table, id);
             _deletes.Clear();
-            return query;
         }
 
         private IEnumerable<Query> FlushUpdates()
@@ -61,7 +60,7 @@ namespace Ptixed.Sql.Implementation.Trackers
                 var commited = _commited[key];
 
                 if (commited == null)
-                    yield return QueryBuilder.Update(new[] { uncommited });
+                    yield return QueryBuilder.Update(uncommited);
                 else
                 {
                     var columns = new List<LogicalColumn>();

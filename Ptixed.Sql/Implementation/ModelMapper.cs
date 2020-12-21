@@ -54,13 +54,18 @@ namespace Ptixed.Sql.Implementation
             }
 
             var model = table.CreateNew();
-            foreach (var column in table.LogicalColumns)
-                table[model, column] = column.FromQuery(columns, config);
+            MapModel(config, model, table, columns);
 
             if (pk != null)
                 tracker.Set(table, pk, model);
 
             return model;
+        }
+
+        public static void MapModel(MappingConfig config, object model, Table table, ColumnValueSet columns)
+        {
+            foreach (var column in table.LogicalColumns)
+                table[model, column] = column.FromQuery(columns, config);
         }
 
         private static object MapScalar(MappingConfig config, Type type, ColumnValueSet columns)

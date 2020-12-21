@@ -265,17 +265,20 @@ namespace Ptixed.Sql.Tests
         {
             using (var db = _db.OpenConnection())
             {
-                var m = new Model();
+                var m = new Model
+                {
+                    Id = new ModelKey()
+                };
 
                 using (var tran = db.OpenTransaction())
                 {
                     db.Insert(m);
-                    m.Temp = "test";
+                    m.EnumAsInt = SomeEnum.SomeEnumValue2;
                     tran.Commit();
                 }
 
                 var m1 = db.GetById<Model>(m.Id);
-                Assert.Equal("test", m1.Temp);
+                Assert.Equal(SomeEnum.SomeEnumValue2, m1.EnumAsInt);
             }
         }
     }

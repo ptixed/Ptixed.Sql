@@ -1,5 +1,6 @@
 ﻿using Ptixed.Sql.Implementation.Trackers;
 using Ptixed.Sql.Metadata;
+using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
@@ -12,10 +13,12 @@ namespace Ptixed.Sql.Implementation
         public event Disposed OnDisposed;
         
         public readonly SqlTransaction SqlTransaction;
-        public readonly TransactionalTracker Tracker = new TransactionalTracker();
+        public readonly TransactionalTracker _tracker = new TransactionalTracker();
 
         private bool? _commited;
         private bool _disposed;
+
+        protected override ITracker Tracker => _tracker;
 
         public DatabaseTransaction(IDatabase db, SqlTransaction transaction) : base(db)
         {
@@ -26,6 +29,9 @@ namespace Ptixed.Sql.Implementation
         {
             if (_commited.HasValue)
                 throw PtixedException.InvalidTransacionState(_commited.Value ? "committed" : "rolledback");
+
+            base.NonQuery(_tracker.Flush());
+
             SqlTransaction.Commit();
             _commited = true;
         }
@@ -53,20 +59,21 @@ namespace Ptixed.Sql.Implementation
 
         #region QueryExecutor
 
-        public override IEnumerable<T> Query<T>(Query query, params Table[] tables)
+        public override IEnumerable<T> Query<T>(Query query, params Type[] types)
         {
             CheckStatus();
 
-            var queries = Tracker.Flush();
+            var queries = _tracker.Flush();
             queries.Add(query);
-            return base.Query<T>(Sql.Query.Join(Sql.Query.Separator, queries), tables);
+
+            return base.Query<T>(Sql.Query.Join(Sql.Query.Separator, queries), types);
         }
 
         public override int NonQuery(IEnumerable<Query> queries)
         {
             CheckStatus();
 
-            return base.NonQuery(Tracker.Flush().Concat(queries));
+            return base.NonQuery(_tracker.Flush().Concat(queries));
         }
 
         public override List<T> GetById<T>(IEnumerable<object> ids)
@@ -76,7 +83,7 @@ namespace Ptixed.Sql.Implementation
 
             foreach (var id in ids)
             {
-                var cached = Tracker.Get(typeof(T), id);
+                var cached = _tracker.Get(typeof(T), id);
                 if (cached == null)
                     missing.Add(id);
                 else
@@ -89,7 +96,7 @@ namespace Ptixed.Sql.Implementation
             return result;
         }
 
-        public override void Insert(IEnumerable<object> entities)
+        public override void Insert<T>(IEnumerable<T> entities)
         {
             base.Insert(entities);
         }
@@ -97,13 +104,13 @@ namespace Ptixed.Sql.Implementation
         public override void Update(IEnumerable<object> entities)
         {
             foreach (var entity in entities)
-                Tracker.ScheduleUpdate(entity);
+                _tracker.ScheduleUpdate(entity);
         }
 
         public override void Delete(IEnumerable<(Table table, object id)> keys)
         {
             foreach (var (table, id) in keys)
-                Tracker.ScheduleDelete(table, id);
+                _tracker.ScheduleDelete(table, id);
         }
 
         #endregion

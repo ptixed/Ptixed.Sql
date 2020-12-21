@@ -5,7 +5,6 @@ using System.Data.SqlClient;
 using System.Linq;
 using Ptixed.Sql.Collections;
 using Ptixed.Sql.Implementation.Accessors;
-using Ptixed.Sql.Implementation.Trackers;
 using Ptixed.Sql.Metadata;
 
 namespace Ptixed.Sql.Implementation
@@ -15,15 +14,15 @@ namespace Ptixed.Sql.Implementation
         private readonly MappingConfig _config;
         private readonly SqlDataReader _reader;
         private readonly ITracker _tracker;
-        private readonly Table[] _subtables;
+        private readonly Type[] _types;
         private readonly List<T> _result;
 
-        public QueryResult(MappingConfig config, SqlDataReader reader, ITracker tracker, Table[] subtables)
+        public QueryResult(MappingConfig config, SqlDataReader reader, ITracker tracker, Type[] types)
         {
             _config = config;
             _reader = reader;
-            _tracker = tracker ?? new DefaultTracker();
-            _subtables = subtables;
+            _tracker = tracker;
+            _types = types;
 
             try
             {
@@ -42,10 +41,10 @@ namespace Ptixed.Sql.Implementation
 
         private IEnumerator<T> GetResultEnumerator()
         {
-            if (_subtables.Length > 0)
+            if (_types.Length > 1)
                 return new ModelGraphEnumerator(this);
 
-            var type = typeof(T);
+            var type = _types[0];
             if (type == typeof(IDictionary<string, object>) || type == typeof(Dictionary<string, object>))
                 return new DictionaryEnumerator(this);
 
@@ -74,7 +73,6 @@ namespace Ptixed.Sql.Implementation
         private class ModelGraphEnumerator : EnumeratorBase
         {
             private readonly Table[] _tables;
-            private readonly Type[] _types;
 
             private ColumnValueSet _columns;
             private bool _consumed = true;
@@ -82,12 +80,7 @@ namespace Ptixed.Sql.Implementation
             public ModelGraphEnumerator(QueryResult<T> result)
                 : base(result)
             {
-                var tables = new List<Table>();
-                tables.Add(typeof(T));
-                tables.AddRange(result._subtables);
-                _tables = tables.ToArray();
-
-                _types = _tables.Select(x => x.Type).ToArray();
+                _tables = result._types.Select(x => Table.Get(x)).ToArray();
             }
 
             public override bool MoveNext()
@@ -95,7 +88,7 @@ namespace Ptixed.Sql.Implementation
                 if (!ReadRow())
                     return false;
 
-                var current = ModelMapper.Map(Result._config, Result._tracker, _types, _columns);
+                var current = ModelMapper.Map(Result._config, Result._tracker, Result._types, _columns);
                 _consumed = true;
 
                 if (_tables[0].PrimaryKey == null)
@@ -109,7 +102,7 @@ namespace Ptixed.Sql.Implementation
 
                 while (ReadRow())
                 {
-                    var next = ModelMapper.Map(Result._config, Result._tracker, _types, _columns);
+                    var next = ModelMapper.Map(Result._config, Result._tracker, Result._types, _columns);
                     if (currentpk?.Equals(_tables[0][next[0], _tables[0].PrimaryKey]) != true)
                         break;
                     objs.Add(next);
@@ -147,7 +140,7 @@ namespace Ptixed.Sql.Implementation
                 if (!Result._reader.Read())
                     return false;
 
-                Current = (T)ModelMapper.Map(Result._config, Result._tracker, typeof(T), new ColumnValueSet(Result._reader));
+                Current = (T)ModelMapper.Map(Result._config, Result._tracker, Result._types[0], new ColumnValueSet(Result._reader));
 
                 return true;
             }
