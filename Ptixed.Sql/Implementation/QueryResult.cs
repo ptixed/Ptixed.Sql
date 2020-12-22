@@ -9,13 +9,12 @@ using Ptixed.Sql.Metadata;
 
 namespace Ptixed.Sql.Implementation
 {
-    internal class QueryResult<T> : IEnumerable<T>, IDisposable
+    internal class QueryResult<T> : IDisposable
     {
         private readonly MappingConfig _config;
         private readonly SqlDataReader _reader;
         private readonly ITracker _tracker;
         private readonly Type[] _types;
-        private readonly List<T> _result;
 
         public QueryResult(MappingConfig config, SqlDataReader reader, ITracker tracker, Type[] types)
         {
@@ -23,23 +22,14 @@ namespace Ptixed.Sql.Implementation
             _reader = reader;
             _tracker = tracker;
             _types = types;
-
-            try
-            {
-                _result = new List<T>();
-                var enumerator = GetResultEnumerator();
-                while (enumerator.MoveNext())
-                    _result.Add(enumerator.Current);
-            }
-            finally { _reader.Dispose(); }
         }
 
-        public void Dispose() { }
-
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-        public IEnumerator<T> GetEnumerator() => _result.GetEnumerator();
-
-        private IEnumerator<T> GetResultEnumerator()
+        public void Dispose()
+        {
+            _reader.Dispose();
+        }
+        
+        public IEnumerator<T> GetEnumerator()
         {
             if (_types.Length > 1)
                 return new ModelGraphEnumerator(this);

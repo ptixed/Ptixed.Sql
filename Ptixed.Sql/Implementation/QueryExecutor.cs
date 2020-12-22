@@ -18,12 +18,23 @@ namespace Ptixed.Sql.Implementation
             _db = db;
         }
 
-        public virtual IEnumerable<T> Query<T>(Query query, params Type[] types)
+        public virtual IEnumerator<T> LazyQuery<T>(Query query, params Type[] types)
         {
             var command = query.ToSql(_db.CreateCommand(), _db.Config.Mappping);
             if (types.Length == 0)
                 types = new[] { typeof(T) };
-            return new QueryResult<T>(_db.Config.Mappping, command.ExecuteReader(), Tracker, types);
+            return new QueryResult<T>(_db.Config.Mappping, command.ExecuteReader(), Tracker, types).GetEnumerator();
+        }
+
+        public List<T> Query<T>(Query query, params Type[] types)
+        {
+            using (var result = LazyQuery<T>(query, types))
+            {
+                var ret = new List<T>();
+                while (result.MoveNext())
+                    ret.Add(result.Current);
+                return ret;
+            }
         }
 
         public virtual int NonQuery(IEnumerable<Query> queries)

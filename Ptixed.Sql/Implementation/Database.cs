@@ -64,7 +64,8 @@ namespace Ptixed.Sql.Implementation
             };
         }
 
-        public IEnumerable<T> Query<T>(Query query, params Type[] types) => Executor.Query<T>(query, types);
+        public List<T> Query<T>(Query query, params Type[] types) => Executor.Query<T>(query, types);
+        public IEnumerator<T> LazyQuery<T>(Query query, params Type[] types) => Executor.LazyQuery<T>(query, types);
         public int NonQuery(IEnumerable<Query> queries) => Executor.NonQuery(queries);
 
         public List<T> GetById<T>(IEnumerable<object> ids) => Executor.GetById<T>(ids);

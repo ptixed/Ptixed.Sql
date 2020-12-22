@@ -59,14 +59,14 @@ namespace Ptixed.Sql.Implementation
 
         #region QueryExecutor
 
-        public override IEnumerable<T> Query<T>(Query query, params Type[] types)
+        public override IEnumerator<T> LazyQuery<T>(Query query, params Type[] types)
         {
             CheckStatus();
 
             var queries = _tracker.Flush();
             queries.Add(query);
 
-            return base.Query<T>(Sql.Query.Join(Sql.Query.Separator, queries), types);
+            return base.LazyQuery<T>(Sql.Query.Join(Sql.Query.Separator, queries), types);
         }
 
         public override int NonQuery(IEnumerable<Query> queries)

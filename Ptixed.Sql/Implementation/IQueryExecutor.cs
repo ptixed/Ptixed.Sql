@@ -6,7 +6,8 @@ namespace Ptixed.Sql.Implementation
 {
     public interface IQueryExecutor
     {
-        IEnumerable<T> Query<T>(Query query, params Type[] types);
+        List<T> Query<T>(Query query, params Type[] types);
+        IEnumerator<T> LazyQuery<T>(Query query, params Type[] types);
         int NonQuery(IEnumerable<Query> queries);
 
         List<T> GetById<T>(IEnumerable<object> ids);
