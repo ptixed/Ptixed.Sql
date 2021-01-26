@@ -1,4 +1,6 @@
-﻿using Ptixed.Sql.Metadata;
+﻿using Ptixed.Sql.Implementation.Trackers;
+using Ptixed.Sql.Implementation.Transactions;
+using Ptixed.Sql.Metadata;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -10,10 +12,17 @@ namespace Ptixed.Sql.Implementation
     public class Database : IDatabase
     {
         private Lazy<SqlConnection> _connection;
-        private DatabaseTransaction _transaction;
+        private ITransactionContext _transaction;
 
-        private IQueryExecutor Executor => _transaction ?? DefaultQueryExecutor;
-        private readonly IQueryExecutor DefaultQueryExecutor;
+        private IQueryExecutor Transaction
+        {
+            get
+            {
+                if (_transaction == null || _transaction.IsDisposed)
+                    return new QueryExecutor(this, new DefaultTracker());
+                return _transaction;
+            }
+        }
 
         public DatabaseConfig Config { get; }
         public DatabaseDiagnostics Diagnostics { get; } = new DatabaseDiagnostics();
@@ -21,7 +30,6 @@ namespace Ptixed.Sql.Implementation
         public Database(DatabaseConfig config)
         {
             Config = config;
-            DefaultQueryExecutor = new QueryExecutor(this);
             ResetConnection();
         }
 
@@ -43,14 +51,16 @@ namespace Ptixed.Sql.Implementation
                 _connection.Value.Dispose();
         }
 
-        public IDatabaseTransaction OpenTransaction(IsolationLevel? isolation = null)
+        public ITransactionContext OpenTransaction(IsolationLevel? isolation = null, bool tracking = false)
         {
-            if (_transaction != null)
+            if (_transaction != null && _transaction.IsDisposed != true)
                 throw PtixedException.InvalidTransacionState("open");
-            
+
             var sqltransaction = _connection.Value.BeginTransaction(isolation ?? Config.DefaultIsolationLevel);
-            _transaction = new DatabaseTransaction(this, sqltransaction);
-            _transaction.OnDisposed += () => _transaction = null;
+            if (tracking)
+                _transaction = new TrackedTransactionContext(this, sqltransaction);
+            else
+                _transaction = new UntrackedTransactionContext(this, sqltransaction);
             return _transaction;
         }
 
@@ -64,13 +74,13 @@ namespace Ptixed.Sql.Implementation
             };
         }
 
-        public List<T> Query<T>(Query query, params Type[] types) => Executor.Query<T>(query, types);
-        public IEnumerator<T> LazyQuery<T>(Query query, params Type[] types) => Executor.LazyQuery<T>(query, types);
-        public int NonQuery(IEnumerable<Query> queries) => Executor.NonQuery(queries);
+        public List<T> Query<T>(Query query, params Type[] types) => Transaction.Query<T>(query, types);
+        public IEnumerator<T> LazyQuery<T>(Query query, params Type[] types) => Transaction.LazyQuery<T>(query, types);
+        public int NonQuery(IEnumerable<Query> queries) => Transaction.NonQuery(queries);
 
-        public List<T> GetById<T>(IEnumerable<object> ids) => Executor.GetById<T>(ids);
-        public void Insert<T>(IEnumerable<T> entities) => Executor.Insert(entities);
-        public void Update(IEnumerable<object> entities) => Executor.Update(entities);
-        public void Delete(IEnumerable<(Table table, object id)> deletes) => Executor.Delete(deletes);
+        public List<T> GetById<T>(IEnumerable<object> ids) => Transaction.GetById<T>(ids);
+        public void Insert<T>(IEnumerable<T> entities) => Transaction.Insert(entities);
+        public void Update(IEnumerable<object> entities) => Transaction.Update(entities);
+        public void Delete(IEnumerable<(Table table, object id)> deletes) => Transaction.Delete(deletes);
     }
 }

@@ -44,7 +44,7 @@ namespace Ptixed.Sql.Metadata
 
             _accessor = new Accessor<LogicalColumn>(type, lookup);
 
-            LogicalColumns = _accessor.Lookup.Keys.ToArray();
+            LogicalColumns = _accessor.Keys.ToArray();
 
             var attr = type.GetCustomAttribute<TableAttribute>();
             Name = attr?.TableName ?? type.Name;

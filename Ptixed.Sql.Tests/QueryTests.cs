@@ -270,7 +270,7 @@ namespace Ptixed.Sql.Tests
                     Id = new ModelKey()
                 };
 
-                using (var tran = db.OpenTransaction())
+                using (var tran = db.OpenTransaction(tracking: true))
                 {
                     db.Insert(m);
                     m.EnumAsInt = SomeEnum.SomeEnumValue2;

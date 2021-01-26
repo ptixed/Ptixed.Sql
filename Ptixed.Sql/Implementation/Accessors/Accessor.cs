@@ -8,26 +8,28 @@ namespace Ptixed.Sql.Implementation.Accessors
 {
     public class Accessor<TKey>
     {
+        private readonly Dictionary<TKey, int> _lookup;
+
         private readonly Func<object, int, object> _getter;
         private readonly Action<object, int, object> _setter;
         private readonly Func<object> _createnew;
         
         public readonly Type Type;
-        public readonly Dictionary<TKey, int> Lookup;
+        public IEnumerable<TKey> Keys => _lookup.Keys;
 
-        public bool CreateNewSupported => _createnew != null;
+        public bool IsCreateNewSupported => _createnew != null;
 
         public object this[object target, TKey name]
         {
-            get => _getter(target, Lookup[name]);
-            set => _setter(target, Lookup[name], value);
+            get => _getter(target, _lookup[name]);
+            set => _setter(target, _lookup[name], value);
         }
 
         public Accessor(Type type, Dictionary<TKey, MemberInfo> lookup)
         {
             Type = type;
 
-            Lookup = lookup.Select((x, i) => (Key: x.Key, Index: i)).ToDictionary(x => x.Key, x => x.Index);
+            _lookup = lookup.Select((x, i) => (Key: x.Key, Index: i)).ToDictionary(x => x.Key, x => x.Index);
 
             var members = lookup.Select(x => x.Value).ToArray();
 
