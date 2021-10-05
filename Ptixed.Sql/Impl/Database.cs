@@ -115,10 +115,12 @@ namespace Ptixed.Sql.Impl
             {
                 if (!_commited)
                 {
-                    _db._transaction.Rollback();
+                    try { _db._transaction.Rollback(); }
+                    catch { /* don't care */ }
                     _rolledback = true;
                 }
 
+                _db._transaction.Dispose();
                 _db._transaction = null;
             }
         }
