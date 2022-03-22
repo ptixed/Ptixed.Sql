@@ -120,7 +120,8 @@ namespace Ptixed.Sql.Impl
                     _rolledback = true;
                 }
 
-                _db._transaction.Dispose();
+                try { _db._transaction.Dispose(); }
+                catch { }
                 _db._transaction = null;
             }
         }
