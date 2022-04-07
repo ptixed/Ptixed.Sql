@@ -35,7 +35,9 @@ namespace Ptixed.Sql.Impl
 
         private SqlCommand NewCommand()
         {
-            _result?.Dispose();
+            try { _result?.Dispose(); }
+            catch { /* don't care */ }
+            
             var command = new SqlCommand()
             {
                 Connection = Connection.Value,
@@ -48,10 +50,15 @@ namespace Ptixed.Sql.Impl
 
         public void Dispose()
         {
-            _result?.Dispose();
-            _transaction?.Dispose();
+            try { _result?.Dispose(); }
+            catch { /* don't care */ }
+
+            try { _transaction?.Dispose(); }
+            catch { /* don't care */ }
+
             if (Connection?.IsValueCreated == true)
-                Connection.Value.Dispose();
+                try { Connection.Value.Dispose(); }
+                catch { /* don't care */ }
         }
 
         public void Reset()
@@ -115,13 +122,14 @@ namespace Ptixed.Sql.Impl
             {
                 if (!_commited)
                 {
-                    try { _db._transaction.Rollback(); }
+                    try { _db._transaction?.Rollback(); }
                     catch { /* don't care */ }
                     _rolledback = true;
                 }
 
-                try { _db._transaction.Dispose(); }
-                catch { }
+                try { _db._transaction?.Dispose(); }
+                catch { /* don't care */ }
+                
                 _db._transaction = null;
             }
         }
