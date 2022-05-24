@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Reflection;
+using Ptixed.Sql.Impl;
 using Ptixed.Sql.Tests.Specimens;
 using Xunit;
 
@@ -258,6 +260,71 @@ namespace Ptixed.Sql.Tests
 
                 Assert.Equal(2, affected);
             }
+        }
+
+        class Foo
+        {
+            public static int StaticField;
+            public static int StaticProperty { get; set; }
+
+            public int Value;
+
+            private int PrivateFoo()
+            {
+                return 1;
+            }
+
+            private static Foo StaticFoo()
+            {
+                return new Foo() { Value = 1 };
+            }
+
+            public void VoidFoo(int i)
+            {
+                Value = i;
+            }
+
+            public Foo()
+            {
+
+            }
+
+            public Foo(int i)
+            {
+                Value = i;
+            }
+
+            public Foo(string s)
+            {
+
+            }
+        }
+
+        [Fact]
+        public void TestAccessor()
+        {
+            var methods = typeof(Foo)
+                .GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+                .ToDictionary(x => x.Name, x => (MemberInfo)x);
+            methods[".ctor"] = typeof(Foo).GetConstructor(Type.EmptyTypes);
+            methods[".ctor`1"] = typeof(Foo).GetConstructor(new [] { typeof(int) });
+            methods[".ctor`1b"] = typeof(Foo).GetConstructor(new[] { typeof(string) });
+            var accessor = new Accessor<string>(typeof(Foo), methods);
+
+            var foo = accessor.Invoke<Foo>(null, ".ctor");
+            Assert.NotNull(foo);
+            foo = accessor.Invoke<Foo>(null, ".ctor`1", 1);
+            Assert.Equal(1, foo.Value);
+            accessor[null, "StaticField"] = 1;
+            Assert.Equal(1, accessor[null, "StaticField"]);
+            accessor[null, "StaticProperty"] = 1;
+            Assert.Equal(1, accessor[null, "StaticProperty"]);
+            var v1 = accessor.Invoke<int>(foo, "PrivateFoo");
+            Assert.Equal(1, v1);
+            var v2 = accessor.Invoke<Foo>(null, "StaticFoo");
+            Assert.Equal(1, v2.Value);
+            var v3 = accessor.Invoke<object>(foo, "VoidFoo", 1);
+            Assert.Equal(1, foo.Value);
         }
     }
 }

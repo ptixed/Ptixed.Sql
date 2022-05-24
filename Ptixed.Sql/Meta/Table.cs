@@ -12,6 +12,7 @@ namespace Ptixed.Sql.Meta
         private static readonly ConcurrentDictionary<Type, Table> Cache = new ConcurrentDictionary<Type, Table>();
 
         private readonly Accessor<LogicalColumn> _accessor;
+        private readonly Func<object, object> _ctor;
 
         public readonly string Name;
         public readonly Type Type;
@@ -40,10 +41,13 @@ namespace Ptixed.Sql.Meta
                 .Select(x => LogicalColumn.TryCreate(this, x))
                 .Where(x => x != null)
                 .ToDictionary<LogicalColumn, LogicalColumn, MemberInfo>(x => x, x => x.Member);
-
             _accessor = new Accessor<LogicalColumn>(type, lookup);
 
-            LogicalColumns = _accessor.Lookup.Keys.ToArray();
+            var ctor = type.GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null);
+            if (ctor != null)
+                _ctor = Accessor.CreateCall<Func<object, object>>(ctor);
+
+            LogicalColumns = lookup.Keys.ToArray();
 
             var attr = type.GetCustomAttribute<TableAttribute>();
             Name = attr?.TableName ?? type.Name;
@@ -70,7 +74,7 @@ namespace Ptixed.Sql.Meta
         public override bool Equals(object obj) => obj is Table t && t.Name == Name;
         public override int GetHashCode() => Name.GetHashCode();
 
-        public object CreateNew() => _accessor.CreateNew();
+        public object CreateNew() => _ctor(null);
 
         public Query GetPrimaryKeyCondition(object o)
         {
