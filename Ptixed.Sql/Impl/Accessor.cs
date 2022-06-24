@@ -8,8 +8,8 @@ namespace Ptixed.Sql.Impl
 {
     public class Accessor<TKey>
     {
-        private readonly Dictionary<TKey, Func<object, object>> _getters;
-        private readonly Dictionary<TKey, Action<object, object>> _setters;
+        private readonly Dictionary<TKey, Func<object, object>> _getters = new Dictionary<TKey, Func<object, object>>();
+        private readonly Dictionary<TKey, Action<object, object>> _setters = new Dictionary<TKey, Action<object, object>>();
 
         private readonly Dictionary<TKey, Func<object, object>> _methods0 = new Dictionary<TKey, Func<object, object>>();
         private readonly Dictionary<TKey, Func<object, object, object>> _methods1 = new Dictionary<TKey, Func<object, object, object>>();
@@ -28,12 +28,6 @@ namespace Ptixed.Sql.Impl
         public Accessor(Type type, Dictionary<TKey, MemberInfo> lookup)
         {
             Type = type;
-
-            var members = lookup.Where(x => !(x.Value is MethodBase));
-
-            _setters = members.ToDictionary(x => x.Key, x => Accessor.CreateSetter(type, x.Value));
-            _getters = members.ToDictionary(x => x.Key, x => Accessor.CreateGetter(type, x.Value));
-
             foreach (var kv in lookup)
                 switch (kv.Value)
                 {
@@ -77,6 +71,14 @@ namespace Ptixed.Sql.Impl
                                 break;
                         }
                         break;
+                    case PropertyInfo property:
+                        _getters.Add(kv.Key, Accessor.CreateGetter(property));
+                        _setters.Add(kv.Key, Accessor.CreateSetter(property));
+                        break;
+                    case FieldInfo field:
+                        _getters.Add(kv.Key, Accessor.CreateGetter(field));
+                        _setters.Add(kv.Key, Accessor.CreateSetter(field));
+                        break;
                 }
         }
 
@@ -89,77 +91,136 @@ namespace Ptixed.Sql.Impl
 
     public class Accessor
     {
-        public static Func<object, object> CreateGetter(Type type, MemberInfo member)
+        public static Func<object, object> CreateGetter(FieldInfo member)
         {
-            var self = OpCodes.Ldarg_0;
-
-            var getter = new DynamicMethod(type.FullName + "_get", typeof(object), new[]
+            var getter = new DynamicMethod($"{member.Name}_get_{Guid.NewGuid():N}", typeof(object), new[]
                 {
                     typeof(object)
-                }, type.Module, true);
+                }, member.Module, true);
             var il = getter.GetILGenerator();
 
-            il.Emit(self);
-            if (type.IsValueType)
-                il.Emit(OpCodes.Unbox, type);
-
-            switch (member)
+            if (member.IsStatic)
             {
-                case PropertyInfo pi: // when pi.CanRead:
-                    il.Emit(type.IsValueType ? OpCodes.Call : OpCodes.Callvirt, pi.GetMethod);
-                    if (pi.PropertyType.IsValueType)
-                        il.Emit(OpCodes.Box, pi.PropertyType);
-                    break;
-                case FieldInfo fi:
-                    il.Emit(OpCodes.Ldfld, fi);
-                    if (fi.FieldType.IsValueType)
-                        il.Emit(OpCodes.Box, fi.FieldType);
-                    break;
-                default:
-                    throw PtixedException.InvalidExpression(member);
+                il.Emit(OpCodes.Ldnull);
+                il.Emit(OpCodes.Ldfld, member);
+                if (member.FieldType.IsValueType)
+                    il.Emit(OpCodes.Box, member.FieldType);
             }
-            il.Emit(OpCodes.Ret);
+            else
+            {
+                il.Emit(OpCodes.Ldarg_0);
+                if (member.ReflectedType.IsValueType)
+                    il.Emit(OpCodes.Unbox_Any, member.ReflectedType);
+                il.Emit(OpCodes.Ldfld, member);
+                if (member.FieldType.IsValueType)
+                    il.Emit(OpCodes.Box, member.FieldType);
+            }
 
+            il.Emit(OpCodes.Ret);
             return (Func<object, object>)getter.CreateDelegate(typeof(Func<object, object>));
         }
 
-        public static Action<object, object> CreateSetter(Type type, MemberInfo member)
+        public static Func<object, object> CreateGetter(PropertyInfo member)
         {
-            var self = OpCodes.Ldarg_0;
-            var value = OpCodes.Ldarg_1;
+            var getter = new DynamicMethod(
+                $"{member.Name}_get_{Guid.NewGuid():N}", 
+                typeof(object), 
+                new[] { typeof(object) },
+                member.Module, 
+                true);
 
-            var setter = new DynamicMethod(type.FullName + "_set", null, new[]
-                {
-                    typeof(object),
-                    typeof(object),
-                }, type.Module, true);
-            var il = setter.GetILGenerator();
+            var il = getter.GetILGenerator();
 
-            il.Emit(self);
-            if (type.IsValueType)
-                il.Emit(OpCodes.Unbox, type);
-
-            switch (member)
+            if (!member.CanRead)
+                il.Emit(OpCodes.Ldnull);
+            else if (member.GetAccessors(true).Any(x => x.IsStatic))
             {
-                case PropertyInfo pi when pi.CanWrite:
-                    il.Emit(value);
-                    il.Emit(pi.PropertyType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, pi.PropertyType);
-                    il.Emit(type.IsValueType ? OpCodes.Call : OpCodes.Callvirt, pi.SetMethod);
-                    break;
-                case PropertyInfo pi:
-                    il.Emit(OpCodes.Pop);
-                    break;
-                case FieldInfo fi:
-                    il.Emit(value);
-                    il.Emit(fi.FieldType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, fi.FieldType);
-                    il.Emit(OpCodes.Stfld, fi);
-                    break;
-                default:
-                    throw PtixedException.InvalidExpression(member);
+                il.Emit(OpCodes.Call, member.GetMethod);
+                if (member.PropertyType.IsValueType)
+                    il.Emit(OpCodes.Box, member.PropertyType);
+            }
+            else
+            {
+                il.Emit(OpCodes.Ldarg_0);
+                if (member.ReflectedType.IsValueType)
+                    il.Emit(OpCodes.Unbox_Any, member.ReflectedType);
+                il.Emit(member.ReflectedType.IsValueType ? OpCodes.Call : OpCodes.Callvirt, member.GetMethod);
+                if (member.PropertyType.IsValueType)
+                    il.Emit(OpCodes.Box, member.PropertyType);
             }
 
             il.Emit(OpCodes.Ret);
+            return (Func<object, object>)getter.CreateDelegate(typeof(Func<object, object>));
+        }
 
+        public static Action<object, object> CreateSetter(FieldInfo member)
+        {
+            var setter = new DynamicMethod(
+                $"{member.Name}_set_{Guid.NewGuid():N}", 
+                null,
+                new[] { typeof(object), typeof(object) },
+                member.Module, 
+                true);
+
+            var il = setter.GetILGenerator();
+
+            if (member.IsStatic)
+            {
+                il.Emit(OpCodes.Ldnull);
+                il.Emit(OpCodes.Ldarg_1);
+                if (member.FieldType.IsValueType)
+                    il.Emit(OpCodes.Unbox_Any, member.FieldType);
+                il.Emit(OpCodes.Stfld, member);
+            }
+            else
+            {
+                il.Emit(OpCodes.Ldarg_0);
+                if (member.ReflectedType.IsValueType)
+                    il.Emit(OpCodes.Unbox_Any, member.ReflectedType);
+                il.Emit(OpCodes.Ldarg_1);
+                if (member.FieldType.IsValueType)
+                    il.Emit(OpCodes.Unbox_Any, member.FieldType);
+                il.Emit(OpCodes.Stfld, member);
+            }
+
+            il.Emit(OpCodes.Ret);
+            return (Action<object, object>)setter.CreateDelegate(typeof(Action<object, object>));
+        }
+
+        public static Action<object, object> CreateSetter(PropertyInfo member)
+        {
+            var setter = new DynamicMethod(
+                $"{member.Name}_set_{Guid.NewGuid():N}", 
+                null, 
+                new[] { typeof(object), typeof(object) }, 
+                member.Module, 
+                true);
+
+            var il = setter.GetILGenerator();
+
+            if (!member.CanWrite)
+            {
+                /* intentionally left blank */
+            }
+            else if (member.GetAccessors(true).Any(x => x.IsStatic))
+            {
+                il.Emit(OpCodes.Ldarg_1);
+                if (member.PropertyType.IsValueType)
+                    il.Emit(OpCodes.Unbox_Any, member.PropertyType);
+                il.Emit(OpCodes.Call, member.SetMethod);
+            }
+            else
+            {
+                il.Emit(OpCodes.Ldarg_0);
+                if (member.ReflectedType.IsValueType)
+                    il.Emit(OpCodes.Unbox_Any, member.ReflectedType);
+                il.Emit(OpCodes.Ldarg_1);
+                if (member.PropertyType.IsValueType)
+                    il.Emit(OpCodes.Unbox_Any, member.PropertyType);
+                il.Emit(member.ReflectedType.IsValueType ? OpCodes.Call : OpCodes.Callvirt, member.SetMethod);
+            }
+
+            il.Emit(OpCodes.Ret);
             return (Action<object, object>)setter.CreateDelegate(typeof(Action<object, object>));
         }
 
@@ -167,7 +228,7 @@ namespace Ptixed.Sql.Impl
         {
             var parameters = info.GetParameters();
             var method = new DynamicMethod(
-                info.ReflectedType.FullName + "_new",
+                $"{info.ReflectedType.Name}_.ctor_{Guid.NewGuid():N}",
                 typeof(object),
                 Enumerable.Repeat(typeof(object), parameters.Length + 1).ToArray(), // 0th arg will be ignored - for consistent api
                 info.ReflectedType.Module,
@@ -178,7 +239,8 @@ namespace Ptixed.Sql.Impl
             for (var i = 0; i < parameters.Length; ++i)
             {
                 il.Emit(OpCodes.Ldarg, i + 1);
-                il.Emit(parameters[i].ParameterType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, parameters[i].ParameterType);
+                if (parameters[i].ParameterType.IsValueType)
+                    il.Emit(OpCodes.Unbox_Any, parameters[i].ParameterType);
             }
 
             il.Emit(OpCodes.Newobj, info);
@@ -186,7 +248,6 @@ namespace Ptixed.Sql.Impl
                 il.Emit(OpCodes.Box, info.DeclaringType);
 
             il.Emit(OpCodes.Ret);
-
             return (T)(object)method.CreateDelegate(typeof(T));
         }
 
@@ -194,7 +255,7 @@ namespace Ptixed.Sql.Impl
         {
             var parameters = info.GetParameters();
             var method = new DynamicMethod(
-                info.ReflectedType.FullName + "_" + info.Name,
+                $"{info.ReflectedType.Name}_{info.Name}_{Guid.NewGuid():N}",
                 typeof(object),
                 Enumerable.Repeat(typeof(object), parameters.Length + 1).ToArray(),
                 info.ReflectedType.Module,
@@ -208,7 +269,8 @@ namespace Ptixed.Sql.Impl
             for (var i = 0; i < parameters.Length; ++i)
             {
                 il.Emit(OpCodes.Ldarg, i + 1);
-                il.Emit(parameters[i].ParameterType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, parameters[i].ParameterType);
+                if (parameters[i].ParameterType.IsValueType)
+                    il.Emit(OpCodes.Unbox_Any, parameters[i].ParameterType);
             }
 
             if (info.IsStatic || info.DeclaringType.IsValueType)
@@ -217,12 +279,11 @@ namespace Ptixed.Sql.Impl
                 il.Emit(OpCodes.Callvirt, info);
 
             if (info.ReturnType == typeof(void))
-                il.Emit(OpCodes.Ldnull); // return anything of info returns void
+                il.Emit(OpCodes.Ldnull);
             else if (info.ReturnType.IsValueType)
                 il.Emit(OpCodes.Box, info.ReturnType);
 
             il.Emit(OpCodes.Ret);
-
             return (T)(object)method.CreateDelegate(typeof(T));
         }
     }
