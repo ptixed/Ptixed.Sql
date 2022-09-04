@@ -47,6 +47,30 @@ namespace Ptixed.Sql
             return query;
         }
 
+        public static Query Insert(string name, params object[] entities)
+        {
+            if (entities == null || entities.Length == 0)
+                return null;
+
+            return Query.Join($"\n\n", entities.Select(entity =>
+            {
+                var table = Table.Get(entity.GetType());
+                var columns = table.PhysicalColumns.Except(new[] { table.AutoIncrementColumn }).ToList<PhysicalColumn>();
+
+                var values = table.ToQuery(columns, entity)
+                    .Select(column => new Query($"{column.Value}"))
+                    .ToList();
+
+                var query = new Query();
+                query.Append(Query.Unsafe($"INSERT INTO {name} ("));
+                query.Append($", ", columns.Select(x => new Query($"{x}")));
+                query.Append($") VALUES (");
+                query.Append($", ", values);
+                query.Append($")");
+                return query;
+            }));
+        }
+
         public static Query Update(params object[] entities)
         {
             if (entities == null || entities.Length == 0)

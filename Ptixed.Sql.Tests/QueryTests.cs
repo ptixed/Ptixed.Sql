@@ -344,5 +344,31 @@ namespace Ptixed.Sql.Tests
             Assert.Equal(1, foo.Field);
             Assert.Null(v4);
         }
+
+        [Fact]
+        public void TestInsertByName()
+        {
+            using (var db = _db.OpenConnection())
+            {
+                db.Insert("Model", new
+                {
+                    question = Guid.NewGuid(),
+                    EnumAsInt = 1,
+                    EnumAsString = "2",
+                    sub = "{}",
+                    SomeConstant = "4",
+                    created = DateTime.Now,
+                }, new
+                {
+                    question = Guid.NewGuid(),
+                    EnumAsInt = 2,
+                    EnumAsString = "1",
+                    sub = "{}",
+                    created = DateTime.Now,
+                });
+                var saved = db.ToList<Model>(new Query($"SELECT * FROM Model"));
+                Assert.Equal(2, saved.Count);
+            }
+        }
     }
 }

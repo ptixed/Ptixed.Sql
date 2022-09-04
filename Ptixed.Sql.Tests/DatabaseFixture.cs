@@ -5,7 +5,7 @@ namespace Ptixed.Sql.Tests
 {
     public class DatabaseFixture : IDisposable
     {
-        private readonly ConnectionConfig _config = new ConnectionConfig("Server=(local);initial catalog=Ptixed;Integrated Security=SSPI");
+        private readonly ConnectionConfig _config = new ConnectionConfig("Server=localhost,31340;initial catalog=Ptixed;User Id=sa;Password=123QWEasd");
 
         public DatabaseFixture()
         {
