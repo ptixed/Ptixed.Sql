@@ -47,6 +47,39 @@ namespace Ptixed.Sql
             return query;
         }
 
+
+        public static Query Upsert<T>(System.FormattableString matchingCondition, T entity) => Upsert<T>(new Query(matchingCondition), entity);
+        public static Query Upsert<T>(Query matchingCondition, T entity)
+        {
+            var table = Table.Get(typeof(T));
+            var columns = table.PhysicalColumns.Except(new[] { table.AutoIncrementColumn }).ToList<PhysicalColumn>();
+            var allcolumns = table.PhysicalColumns.ToList<PhysicalColumn>();
+            var allColumnsDictionary = allcolumns.ToDictionary(x => x.Name);
+            var columnValues = table.ToQuery(columns, entity).ToArray();
+
+            var query = new Query();
+            // MERGE
+            query.Append($"MERGE {table} AS [Target] \n");
+            // USING
+            query.Append($"USING (SELECT ");
+            query.Append($", ", table.ToQuery(allcolumns, entity).Select(x => new Query($"{allColumnsDictionary[x.Name]} = {x.Value}")));
+            query.Append($") AS [Source] \n");
+            query.Append(matchingCondition);
+
+            // UPDATE
+            query.Append($"\n WHEN MATCHED THEN \n");
+            query.Append($" UPDATE SET \n");
+            query.Append($", ", columnValues.Select(column => new Query($"[Target].{allColumnsDictionary[column.Name]} = {column.Value} \n")));
+
+            // INSERT
+            query.Append($" WHEN NOT MATCHED THEN \n");
+            query.Append($" INSERT ( ");
+            query.Append($", ", columns.Select(x => new Query($"{x}")));
+            query.Append($") \n VALUES ( ");
+            query.Append($", ", columnValues.Select(column => new Query($"{column.Value}")));
+            query.Append($");");
+            return query;
+        }
         public static Query Update(params object[] entities)
         {
             if (entities == null || entities.Length == 0)

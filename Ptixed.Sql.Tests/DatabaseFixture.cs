@@ -30,14 +30,22 @@ namespace Ptixed.Sql.Tests
                     , primary key (Id)
                     )");
 
-                db.NonQuery(drop1, create1, drop2, create2);
+                var drop3 = new Query($@"if exists (select * from sys.tables where name = 'ModelUpsert') drop table ModelUpsert");
+                var create3 = new Query($@"create table ModelUpsert
+                    ( Id int not null identity(1,1) 
+	                , Name varchar(256) null
+                    , Age int null
+                    , primary key (Id)
+                    )");
+
+                db.NonQuery(drop1, create1, drop2, create2, drop3, create3);
             }
         }
 
         public void Dispose()
         {
             using (var db = OpenConnection())
-                db.NonQuery(new Query($"drop table Model; drop table Model2;"));
+                db.NonQuery(new Query($"drop table Model; drop table Model2; drop table ModelUpsert;"));
         }
 
         public Database OpenConnection() => new Database(_config);

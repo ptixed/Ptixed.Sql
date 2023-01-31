@@ -344,5 +344,43 @@ namespace Ptixed.Sql.Tests
             Assert.Equal(1, foo.Field);
             Assert.Null(v4);
         }
+
+        [Fact]
+        public void TestUpsertQueries()
+        {
+            using (var db = _db.OpenConnection())
+            {
+                var model = new ModelUpsert
+                {
+                    Age = 1,
+                    Name = "John Doe"
+                };
+
+                var inserted = db.Insert(model);
+                Assert.True(inserted.Id > 0);
+
+                db.Upsert($"ON [Target].Id = [Source].Id", new ModelUpsert
+                {
+                    Name = "Jane Doe",
+                    Age = 12,
+                    Id = inserted.Id
+                });
+
+                var byId = db.GetById<ModelUpsert>(inserted.Id);
+                Assert.NotNull(byId);
+                Assert.True(byId.Age == 12);
+
+                db.Upsert($"ON [Target].Id = [Source].Id", new ModelUpsert
+                {
+                    Name = "Janice Doe",
+                    Age = 21
+                });
+
+                var byName = db.ToList<ModelUpsert>($"SELECT * FROM ModelUpsert WHERE Name like 'Janice Doe'");
+                Assert.NotNull(byName);
+                Assert.True(byName.First().Age == 21);
+                Assert.True(byName.First().Id != inserted.Id);
+            }
+        }
     }
 }
