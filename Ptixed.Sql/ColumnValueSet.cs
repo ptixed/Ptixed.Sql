@@ -20,7 +20,7 @@ namespace Ptixed.Sql
             {
                 if (_dict.Value.TryGetValue(key, out object value))
                     return value;
-                throw PtixedException.ColumnNotFound(key);
+                throw PtixedException.ColumnNotFound(key, _dict.Value.Keys);
             }
         }
         public object this[int key] => _values[key];

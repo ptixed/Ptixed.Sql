@@ -55,7 +55,7 @@ namespace Ptixed.Sql.Meta
             {
                 PrimaryKey = LogicalColumns.SingleOrDefault(x => x.Name == attr.PkColumn);
                 if (PrimaryKey == null)
-                    throw PtixedException.InvalidColumnName(attr.PkColumn);
+                    throw PtixedException.ColumnNotFound(attr.PkColumn, type);
             }
 
             PhysicalColumns = LogicalColumns.SelectMany(x => x.PhysicalColumns.Select(y => y.AddPk(x == PrimaryKey))).ToArray();
