@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
 using Ptixed.Sql.Impl;
@@ -343,6 +344,21 @@ namespace Ptixed.Sql.Tests
             var v4 = accessor.Invoke<object>(foo, "VoidMethod", 1, new Foo());
             Assert.Equal(1, foo.Field);
             Assert.Null(v4);
+        }
+
+        [Fact]
+        public void TestListInsert()
+        {
+            using (var db = _db.OpenConnection())
+                Assert.Throws<SqlException>(() =>
+                    db.Insert(new List<Model2>
+                    { 
+                        new Model2
+                        {
+                            ModelId = 1
+                        }
+                    })
+                );
         }
     }
 }

@@ -22,7 +22,7 @@ namespace Ptixed.Sql.Impl
 
         private TypeAccessor(Type type)
         {
-            IEnumerable<MemberInfo> properties = type.GetProperties();
+            IEnumerable<MemberInfo> properties = type.GetProperties().Where(x => x.GetIndexParameters().Length == 0);
             IEnumerable<MemberInfo> fields = type.GetFields();
 
             _accessor = new Accessor<MemberInfo>(type, properties.Concat(fields).ToDictionary(x => x));

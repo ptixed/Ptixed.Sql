@@ -38,6 +38,7 @@ namespace Ptixed.Sql.Meta
             Type = type;
 
             var lookup = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                .Where(x => x.GetIndexParameters().Length == 0)
                 .Select(x => LogicalColumn.TryCreate(this, x))
                 .Where(x => x != null)
                 .ToDictionary<LogicalColumn, LogicalColumn, MemberInfo>(x => x, x => x.Member);
