@@ -49,7 +49,7 @@ namespace Ptixed.Sql
             return query;
         }
 
-        public static Query Insert(string table, Dictionary<string, object> values)
+        public static Query Insert(string table, IDictionary<string, object> values)
         {
             if (table.Contains(']'))
                 throw PtixedException.InvalidIdenitfier(table);
