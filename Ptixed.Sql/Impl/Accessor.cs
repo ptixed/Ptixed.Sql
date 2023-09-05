@@ -8,6 +8,8 @@ namespace Ptixed.Sql.Impl
 {
     public class Accessor<TKey>
     {
+        private readonly Dictionary<TKey, MemberInfo> _lookup;
+
         private readonly Dictionary<TKey, Func<object, object>> _getters = new Dictionary<TKey, Func<object, object>>();
         private readonly Dictionary<TKey, Action<object, object>> _setters = new Dictionary<TKey, Action<object, object>>();
 
@@ -27,6 +29,8 @@ namespace Ptixed.Sql.Impl
 
         public Accessor(Type type, Dictionary<TKey, MemberInfo> lookup)
         {
+            _lookup = new Dictionary<TKey, MemberInfo>(lookup);
+            
             Type = type;
             foreach (var kv in lookup)
                 switch (kv.Value)
@@ -82,6 +86,8 @@ namespace Ptixed.Sql.Impl
                 }
         }
 
+        public MemberInfo GetMember(TKey name) => _lookup.TryGetValue(name, out var member) ? member : null;
+
         public T Invoke<T>(object target, TKey name) => (T)_methods0[name](target);
         public T Invoke<T>(object target, TKey name, object p1) => (T)_methods1[name](target, p1);
         public T Invoke<T>(object target, TKey name, object p1, object p2) => (T)_methods2[name](target, p1, p2);
@@ -110,7 +116,7 @@ namespace Ptixed.Sql.Impl
             {
                 il.Emit(OpCodes.Ldarg_0);
                 if (member.ReflectedType.IsValueType)
-                    il.Emit(OpCodes.Unbox_Any, member.ReflectedType);
+                    il.Emit(OpCodes.Unbox, member.ReflectedType);
                 il.Emit(OpCodes.Ldfld, member);
                 if (member.FieldType.IsValueType)
                     il.Emit(OpCodes.Box, member.FieldType);
@@ -143,7 +149,7 @@ namespace Ptixed.Sql.Impl
             {
                 il.Emit(OpCodes.Ldarg_0);
                 if (member.ReflectedType.IsValueType)
-                    il.Emit(OpCodes.Unbox_Any, member.ReflectedType);
+                    il.Emit(OpCodes.Unbox, member.ReflectedType);
                 il.Emit(member.ReflectedType.IsValueType ? OpCodes.Call : OpCodes.Callvirt, member.GetMethod);
                 if (member.PropertyType.IsValueType)
                     il.Emit(OpCodes.Box, member.PropertyType);
@@ -176,7 +182,7 @@ namespace Ptixed.Sql.Impl
             {
                 il.Emit(OpCodes.Ldarg_0);
                 if (member.ReflectedType.IsValueType)
-                    il.Emit(OpCodes.Unbox_Any, member.ReflectedType);
+                    il.Emit(OpCodes.Unbox, member.ReflectedType);
                 il.Emit(OpCodes.Ldarg_1);
                 if (member.FieldType.IsValueType)
                     il.Emit(OpCodes.Unbox_Any, member.FieldType);
@@ -213,7 +219,7 @@ namespace Ptixed.Sql.Impl
             {
                 il.Emit(OpCodes.Ldarg_0);
                 if (member.ReflectedType.IsValueType)
-                    il.Emit(OpCodes.Unbox_Any, member.ReflectedType);
+                    il.Emit(OpCodes.Unbox, member.ReflectedType);
                 il.Emit(OpCodes.Ldarg_1);
                 if (member.PropertyType.IsValueType)
                     il.Emit(OpCodes.Unbox_Any, member.PropertyType);

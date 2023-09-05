@@ -314,7 +314,7 @@ namespace Ptixed.Sql.Tests
 
             var members = typeof(Foo).GetMethods(flags).ToDictionary(x => x.Name, x => (MemberInfo)x);
             members.Add(".ctor", typeof(Foo).GetConstructor(Type.EmptyTypes));
-            members.Add(".ctor`1", typeof(Foo).GetConstructor(new [] { typeof(int), typeof(Foo) }));
+            members.Add(".ctor`1", typeof(Foo).GetConstructor(new[] { typeof(int), typeof(Foo) }));
             members.Add(".ctor`1b", typeof(Foo).GetConstructor(new[] { typeof(string) }));
             foreach (var member in typeof(Foo).GetProperties(flags))
                 members.Add(member.Name, member);
@@ -344,6 +344,10 @@ namespace Ptixed.Sql.Tests
             var v4 = accessor.Invoke<object>(foo, "VoidMethod", 1, new Foo());
             Assert.Equal(1, foo.Field);
             Assert.Null(v4);
+
+            var accessor2 = new Accessor<string>(typeof(KeyValuePair<string, object>), typeof(KeyValuePair<string, object>).GetProperties().ToDictionary(x => x.Name, x => x as MemberInfo));
+            var v5 = new KeyValuePair<string, object>("foo", new Foo());
+            Assert.Equal("foo", accessor2[v5, "Key"]);
         }
 
         [Fact]
