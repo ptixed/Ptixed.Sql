@@ -42,5 +42,8 @@ namespace Ptixed.Sql.Impl
 
         public static Exception InvalidMapping()
             => new PtixedException($"Invalid mapping, not all columns were consumed");
+
+        public static Exception InvalidIdenitfier(string name)
+            => new PtixedException($"Identifier is invalid: {name}");
     }
 }

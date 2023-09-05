@@ -71,6 +71,11 @@ namespace Ptixed.Sql
             return Insert(db, new [] { entity })[0];
         }
 
+        public static string Insert(this IDatabase db, string table, Dictionary<string, object> values)
+        {
+            return db.Query<string>(QueryHelper.Insert(table, values)).Single();
+        }
+
         public static void Update(this IDatabase db, params object[] entities)
         {
             if (entities.Length == 0)

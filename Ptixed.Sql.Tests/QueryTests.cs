@@ -360,5 +360,24 @@ namespace Ptixed.Sql.Tests
                     })
                 );
         }
+
+        [Fact]
+        public void TestDictionaryInsert()
+        {
+            using (var db = _db.OpenConnection())
+            {
+                var autoincr = db.Insert("Model", new Dictionary<string, object>
+                {
+                    { "question", Guid.NewGuid() },
+                    { "EnumAsInt", (int)SomeEnum.SomeEnumValue1 },
+                    { "EnumAsString", SomeEnum.SomeEnumValue2.ToString() },
+                    { "sub", "{ id: 1 }" },
+                    { "SomeConstant", "SomeConstantValue" },
+                    { "created", DateTime.Now }
+                });
+                var model = db.Single<Model>($"SELECT * FROM Model");
+                Assert.Equal(autoincr, model.Id.ClientId.ToString());
+            }
+        }
     }
 }
