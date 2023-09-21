@@ -26,7 +26,7 @@ namespace Ptixed.Sql.Impl
                     offset += table.PhysicalColumns.Length;
                 }
             }
-            if (offset != columns.Count)
+            if (types.Length > 1 && offset != columns.Count)
                 throw PtixedException.InvalidMapping();
             return ret;
         }
