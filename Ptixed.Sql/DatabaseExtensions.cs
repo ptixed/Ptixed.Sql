@@ -36,7 +36,7 @@ namespace Ptixed.Sql
         public static T FirstOrDefault<T>(this IDatabase db, FormattableString query)
             => db.Query<T>(new Query(query)).FirstOrDefault();
 
-        public static void NonQuery(this IDatabase db, FormattableString query)
+        public static int NonQuery(this IDatabase db, FormattableString query)
             => db.NonQuery(new Query(query));
         
         public static List<T> GetByIds<T>(this IDatabase db, params object[] ids)
@@ -76,25 +76,25 @@ namespace Ptixed.Sql
             return db.Query<string>(QueryHelper.Insert(table, values)).Single();
         }
 
-        public static void Update(this IDatabase db, params object[] entities)
+        public static int Update(this IDatabase db, params object[] entities)
         {
             if (entities.Length == 0)
-                return;
-            db.NonQuery(QueryHelper.Update(entities));
+                return 0;
+            return db.NonQuery(QueryHelper.Update(entities));
         }
 
-        public static void Delete(this IDatabase db, params object[] entities)
+        public static int Delete(this IDatabase db, params object[] entities)
         {
             if (entities.Length == 0)
-                return;
-            db.NonQuery(QueryHelper.Delete(entities));
+                return 0;
+            return db.NonQuery(QueryHelper.Delete(entities));
         }
 
-        public static void Delete<T>(this IDatabase db, params object[] ids)
+        public static int Delete<T>(this IDatabase db, params object[] ids)
         {
             if (ids.Length == 0)
-                return;
-            db.NonQuery(QueryHelper.Delete<T>(ids));
+                return 0;
+            return db.NonQuery(QueryHelper.Delete<T>(ids));
         }
     }
 }
