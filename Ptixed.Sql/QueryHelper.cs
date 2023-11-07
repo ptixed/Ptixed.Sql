@@ -48,13 +48,12 @@ namespace Ptixed.Sql
         }
 
 
-        public static Query Upsert<T>(System.FormattableString matchingCondition, T entity) => Upsert<T>(new Query(matchingCondition), entity);
-        public static Query Upsert<T>(Query matchingCondition, T entity)
+        public static Query Upsert<T>(System.FormattableString searchCondition, T entity) => Upsert<T>(new Query(searchCondition), entity);
+        public static Query Upsert<T>(Query searchCondition, T entity)
         {
             var table = Table.Get(typeof(T));
             var columns = table.PhysicalColumns.Except(new[] { table.AutoIncrementColumn }).ToList<PhysicalColumn>();
             var allcolumns = table.PhysicalColumns.ToList<PhysicalColumn>();
-            var allColumnsDictionary = allcolumns.ToDictionary(x => x.Name);
             var columnValues = table.ToQuery(columns, entity).ToArray();
 
             var query = new Query();
@@ -62,14 +61,14 @@ namespace Ptixed.Sql
             query.Append($"MERGE {table} AS [Target] \n");
             // USING
             query.Append($"USING (SELECT ");
-            query.Append($", ", table.ToQuery(allcolumns, entity).Select(x => new Query($"{allColumnsDictionary[x.Name]} = {x.Value}")));
+            query.Append($", ", table.ToQuery(allcolumns, entity).Select(x => new Query($"{x} = {x.Value}")));
             query.Append($") AS [Source] \n");
-            query.Append(matchingCondition);
+            query.Append(searchCondition);
 
             // UPDATE
             query.Append($"\n WHEN MATCHED THEN \n");
             query.Append($" UPDATE SET \n");
-            query.Append($", ", columnValues.Select(column => new Query($"[Target].{allColumnsDictionary[column.Name]} = {column.Value} \n")));
+            query.Append($", ", columnValues.Select(column => new Query($"[Target].{column} = {column.Value} \n")));
 
             // INSERT
             query.Append($" WHEN NOT MATCHED THEN \n");
@@ -77,7 +76,11 @@ namespace Ptixed.Sql
             query.Append($", ", columns.Select(x => new Query($"{x}")));
             query.Append($") \n VALUES ( ");
             query.Append($", ", columnValues.Select(column => new Query($"{column.Value}")));
-            query.Append($");");
+            query.Append($")");
+
+            query.Append($"OUTPUT ");
+            query.Append($", ", table.PhysicalColumns.Select(x => new Query($"INSERTED.{x}")));
+            query.Append($";");
             return query;
         }
         public static Query Update(params object[] entities)

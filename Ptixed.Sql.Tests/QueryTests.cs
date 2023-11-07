@@ -359,23 +359,29 @@ namespace Ptixed.Sql.Tests
                 var inserted = db.Insert(model);
                 Assert.True(inserted.Id > 0);
 
-                db.Upsert($"ON [Target].Id = [Source].Id", new ModelUpsert
+                var response = db.Upsert($"ON [Target].Id = [Source].Id", new ModelUpsert
                 {
                     Name = "Jane Doe",
                     Age = 12,
                     Id = inserted.Id
                 });
+                Assert.True(response.Count == 1);
+                Assert.NotNull(response.FirstOrDefault());
+                Assert.True(response.First().Age == 12);
 
                 var byId = db.GetById<ModelUpsert>(inserted.Id);
                 Assert.NotNull(byId);
                 Assert.True(byId.Age == 12);
 
-                db.Upsert($"ON [Target].Id = [Source].Id", new ModelUpsert
+                response = db.Upsert($"ON [Target].Id = [Source].Id", new ModelUpsert
                 {
                     Name = "Janice Doe",
                     Age = 21
                 });
-
+                Assert.True(response.Count == 1);
+                Assert.NotNull(response.FirstOrDefault());
+                Assert.True(response.First().Age == 21);
+                Assert.True(response.First().Id != inserted.Id);
                 var byName = db.ToList<ModelUpsert>($"SELECT * FROM ModelUpsert WHERE Name like 'Janice Doe'");
                 Assert.NotNull(byName);
                 Assert.True(byName.First().Age == 21);
