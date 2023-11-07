@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
 using Ptixed.Sql.Impl;
@@ -313,7 +314,7 @@ namespace Ptixed.Sql.Tests
 
             var members = typeof(Foo).GetMethods(flags).ToDictionary(x => x.Name, x => (MemberInfo)x);
             members.Add(".ctor", typeof(Foo).GetConstructor(Type.EmptyTypes));
-            members.Add(".ctor`1", typeof(Foo).GetConstructor(new [] { typeof(int), typeof(Foo) }));
+            members.Add(".ctor`1", typeof(Foo).GetConstructor(new[] { typeof(int), typeof(Foo) }));
             members.Add(".ctor`1b", typeof(Foo).GetConstructor(new[] { typeof(string) }));
             foreach (var member in typeof(Foo).GetProperties(flags))
                 members.Add(member.Name, member);
@@ -343,6 +344,44 @@ namespace Ptixed.Sql.Tests
             var v4 = accessor.Invoke<object>(foo, "VoidMethod", 1, new Foo());
             Assert.Equal(1, foo.Field);
             Assert.Null(v4);
+
+            var accessor2 = new Accessor<string>(typeof(KeyValuePair<string, object>), typeof(KeyValuePair<string, object>).GetProperties().ToDictionary(x => x.Name, x => x as MemberInfo));
+            var v5 = new KeyValuePair<string, object>("foo", new Foo());
+            Assert.Equal("foo", accessor2[v5, "Key"]);
+        }
+
+        [Fact]
+        public void TestListInsert()
+        {
+            using (var db = _db.OpenConnection())
+                Assert.Throws<SqlException>(() =>
+                    db.Insert(new List<Model2>
+                    { 
+                        new Model2
+                        {
+                            ModelId = 1
+                        }
+                    })
+                );
+        }
+
+        [Fact]
+        public void TestDictionaryInsert()
+        {
+            using (var db = _db.OpenConnection())
+            {
+                var autoincr = db.Insert("Model", new Dictionary<string, object>
+                {
+                    { "question", Guid.NewGuid() },
+                    { "EnumAsInt", (int)SomeEnum.SomeEnumValue1 },
+                    { "EnumAsString", SomeEnum.SomeEnumValue2.ToString() },
+                    { "sub", "{ id: 1 }" },
+                    { "SomeConstant", "SomeConstantValue" },
+                    { "created", DateTime.Now }
+                });
+                var model = db.Single<Model>($"SELECT * FROM Model");
+                Assert.Equal(autoincr, model.Id.ClientId.ToString());
+            }
         }
 
         [Fact]

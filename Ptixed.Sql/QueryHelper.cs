@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Ptixed.Sql.Impl;
 using Ptixed.Sql.Meta;
 
 namespace Ptixed.Sql
@@ -83,6 +85,25 @@ namespace Ptixed.Sql
             query.Append($";");
             return query;
         }
+
+        public static Query Insert(string table, IDictionary<string, object> values)
+        {
+            if (table.Contains(']'))
+                throw PtixedException.InvalidIdenitfier(table);
+            foreach (var column in values.Keys)
+                if (column.Contains(']'))
+                    throw PtixedException.InvalidIdenitfier(column);
+
+            var query = new Query();
+            query.Append(Query.Unsafe($"INSERT INTO [{table}] ("));
+            query.Append($", ", values.Select(x => Query.Unsafe($"[{x.Key}]")));
+            query.Append($") VALUES (");
+            query.Append($", ", values.Select(x => new Query($"{x.Value}")));
+            query.Append($")\n\n");
+            query.Append($"SELECT SCOPE_IDENTITY()");
+            return query;
+        }
+
         public static Query Update(params object[] entities)
         {
             if (entities == null || entities.Length == 0)

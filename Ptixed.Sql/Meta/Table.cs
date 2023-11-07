@@ -38,6 +38,7 @@ namespace Ptixed.Sql.Meta
             Type = type;
 
             var lookup = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                .Where(x => x.GetIndexParameters().Length == 0)
                 .Select(x => LogicalColumn.TryCreate(this, x))
                 .Where(x => x != null)
                 .ToDictionary<LogicalColumn, LogicalColumn, MemberInfo>(x => x, x => x.Member);
@@ -55,7 +56,7 @@ namespace Ptixed.Sql.Meta
             {
                 PrimaryKey = LogicalColumns.SingleOrDefault(x => x.Name == attr.PkColumn);
                 if (PrimaryKey == null)
-                    throw PtixedException.InvalidColumnName(attr.PkColumn);
+                    throw PtixedException.ColumnNotFound(attr.PkColumn, type);
             }
 
             PhysicalColumns = LogicalColumns.SelectMany(x => x.PhysicalColumns.Select(y => y.AddPk(x == PrimaryKey))).ToArray();
