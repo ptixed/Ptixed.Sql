@@ -383,5 +383,49 @@ namespace Ptixed.Sql.Tests
                 Assert.Equal(autoincr, model.Id.ClientId.ToString());
             }
         }
+
+        [Fact]
+        public void TestUpsertQueries()
+        {
+            using (var db = _db.OpenConnection())
+            {
+                var model = new ModelUpsert
+                {
+                    Age = 1,
+                    Name = "John Doe"
+                };
+
+                var inserted = db.Insert(model);
+                Assert.True(inserted.Id > 0);
+
+                var response = db.Upsert($"ON [Target].Id = [Source].Id", new ModelUpsert
+                {
+                    Name = "Jane Doe",
+                    Age = 12,
+                    Id = inserted.Id
+                });
+                Assert.True(response.Count == 1);
+                Assert.NotNull(response.FirstOrDefault());
+                Assert.True(response.First().Age == 12);
+
+                var byId = db.GetById<ModelUpsert>(inserted.Id);
+                Assert.NotNull(byId);
+                Assert.True(byId.Age == 12);
+
+                response = db.Upsert($"ON [Target].Id = [Source].Id", new ModelUpsert
+                {
+                    Name = "Janice Doe",
+                    Age = 21
+                });
+                Assert.True(response.Count == 1);
+                Assert.NotNull(response.FirstOrDefault());
+                Assert.True(response.First().Age == 21);
+                Assert.True(response.First().Id != inserted.Id);
+                var byName = db.ToList<ModelUpsert>($"SELECT * FROM ModelUpsert WHERE Name like 'Janice Doe'");
+                Assert.NotNull(byName);
+                Assert.True(byName.First().Age == 21);
+                Assert.True(byName.First().Id != inserted.Id);
+            }
+        }
     }
 }

@@ -38,7 +38,14 @@ namespace Ptixed.Sql
 
         public static int NonQuery(this IDatabase db, FormattableString query)
             => db.NonQuery(new Query(query));
-        
+        public static List<T> Upsert<T>(this IDatabase db, FormattableString matchingCondition, T obj)
+        {
+
+            var result = db.Query<T>(QueryHelper.Upsert(matchingCondition, obj)).ToList();
+            return result;
+        }
+
+
         public static List<T> GetByIds<T>(this IDatabase db, params object[] ids)
         {
             if (ids.Length == 0)
