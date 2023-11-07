@@ -404,9 +404,8 @@ namespace Ptixed.Sql.Tests
                     Age = 12,
                     Id = inserted.Id
                 });
-                Assert.True(response.Count == 1);
-                Assert.NotNull(response.FirstOrDefault());
-                Assert.True(response.First().Age == 12);
+                Assert.NotNull(response);
+                Assert.True(response.Age == 12);
 
                 var byId = db.GetById<ModelUpsert>(inserted.Id);
                 Assert.NotNull(byId);
@@ -417,10 +416,9 @@ namespace Ptixed.Sql.Tests
                     Name = "Janice Doe",
                     Age = 21
                 });
-                Assert.True(response.Count == 1);
-                Assert.NotNull(response.FirstOrDefault());
-                Assert.True(response.First().Age == 21);
-                Assert.True(response.First().Id != inserted.Id);
+                Assert.NotNull(response);
+                Assert.True(response.Age == 21);
+                Assert.True(response.Id != inserted.Id);
                 var byName = db.ToList<ModelUpsert>($"SELECT * FROM ModelUpsert WHERE Name like 'Janice Doe'");
                 Assert.NotNull(byName);
                 Assert.True(byName.First().Age == 21);

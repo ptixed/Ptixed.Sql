@@ -50,7 +50,6 @@ namespace Ptixed.Sql
         }
 
 
-        public static Query Upsert<T>(System.FormattableString searchCondition, T entity) => Upsert<T>(new Query(searchCondition), entity);
         public static Query Upsert<T>(Query searchCondition, T entity)
         {
             var table = Table.Get(typeof(T));
@@ -83,6 +82,7 @@ namespace Ptixed.Sql
             query.Append($"OUTPUT ");
             query.Append($", ", table.PhysicalColumns.Select(x => new Query($"INSERTED.{x}")));
             query.Append($";");
+
             return query;
         }
 
