@@ -1,12 +1,12 @@
-﻿using Ptixed.Sql.Meta;
+﻿using Npgsql;
+using Ptixed.Sql.Meta;
 using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
 using System.Runtime.CompilerServices;
 
-namespace Ptixed.Sql.SqlServer
+namespace Ptixed.Sql.Postgres
 {
-    public class Query : Query<SqlParameter>
+    public class Query : Query<NpgsqlParameter>
     {
         public static Query Unsafe(string query) => new Query(FormattableStringFactory.Create(query));
 
@@ -18,13 +18,13 @@ namespace Ptixed.Sql.SqlServer
             switch (o)
             {
                 case Table tm:
-                    formants.Add(mapping.FormatTableName(tm));
+                    formants.Add($"\"{mapping.FormatTableName(tm)}\"");
                     return true;
                 case PhysicalColumn pc:
-                    formants.Add($"[{pc.Name}]");
+                    formants.Add($"\"{pc.Name}\"");
                     return true;
                 case ColumnValue cv:
-                    formants.Add($"[{cv.Name}]");
+                    formants.Add($"\"{cv.Name}\"");
                     return true;
             }
             return false;

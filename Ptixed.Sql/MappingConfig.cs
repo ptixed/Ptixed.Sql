@@ -37,6 +37,8 @@ namespace Ptixed.Sql
 
         protected virtual Func<object, object> ToDbImpl(Type type)
         {
+            if (type.IsEnum)
+                return x => (int)x;
             return x => x;
         }
 

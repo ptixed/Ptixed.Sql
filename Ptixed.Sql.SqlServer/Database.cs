@@ -4,7 +4,7 @@ using System.Data.SqlClient;
 
 namespace Ptixed.Sql.SqlServer
 {
-    public class Database : Ptixed.Sql.Impl.Database<SqlCommand, SqlParameter>, IDatabase
+    public class Database : Database<SqlCommand, SqlParameter>, IDatabase
     {
         public Database(ConnectionConfig config) : base(config)
         {

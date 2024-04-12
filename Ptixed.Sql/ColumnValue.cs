@@ -12,7 +12,5 @@ namespace Ptixed.Sql
             Name = name;
             Value = value == DBNull.Value ? null : value;
         }
-
-        public override string ToString() => $"[{Name}]";
     }
 }
