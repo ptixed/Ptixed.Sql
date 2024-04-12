@@ -6,7 +6,7 @@ namespace Ptixed.Sql.Tests.SqlServer
 {
     public class DatabaseFixture : IDisposable
     {
-        private readonly ConnectionConfig _config = new ConnectionConfig("Server=.,14444;initial catalog=Ptixed; User=sa; Password=123QWEasd;");
+        private readonly ConnectionConfig _config = new ConnectionConfig(AppSettings.Instance["SqlServer.ConnectionString"]);
 
         public DatabaseFixture()
         {

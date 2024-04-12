@@ -6,7 +6,7 @@ namespace Ptixed.Sql.Tests.Postgres
 {
     public class DatabaseFixture : IDisposable
     {
-        private readonly ConnectionConfig _config = new ConnectionConfig("Host=cm-cloud.adrentech.com; Port=5444; Database=ptixed; Username=sa; Password=fy7B32dFgC4utAziA5zkLOitTWEAQlsHLi1ROgRMGII1;");
+        private readonly ConnectionConfig _config = new ConnectionConfig(AppSettings.Instance["Postgres.ConnectionString"]);
 
         public DatabaseFixture()
         {

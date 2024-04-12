@@ -1,8 +1,8 @@
 
-/.vs/
+.vs/
+*.user
 
-/packages/
 bin/
 obj/
 
-*.user
+appsettings.json
