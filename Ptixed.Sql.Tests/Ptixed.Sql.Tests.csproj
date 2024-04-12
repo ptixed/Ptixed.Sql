@@ -12,6 +12,6 @@
       </PackageReference>
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\Ptixed.Sql\Ptixed.Sql.csproj" />
+      <ProjectReference Include="..\Ptixed.Sql.SqlServer\Ptixed.Sql.SqlServer.csproj" />
     </ItemGroup>
 </Project>

@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
 using Ptixed.Sql.Impl;
+using Ptixed.Sql.SqlServer;
 using Ptixed.Sql.Tests.Specimens;
 using Xunit;
 

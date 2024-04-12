@@ -1,20 +1,20 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using System.Data.Common;
 using System.Linq;
 using Ptixed.Sql.Meta;
 
 namespace Ptixed.Sql.Impl
 {
-    internal class QueryResult<T> : IEnumerable<T>, IDisposable
+    public class QueryResult<T> : IEnumerable<T>, IDisposable
     {
         private readonly MappingConfig _config;
-        private readonly SqlDataReader _reader;
+        private readonly DbDataReader _reader;
         private readonly Type[] _types;
         private readonly List<T> _result;
 
-        public QueryResult(MappingConfig config, SqlDataReader reader, Type[] types)
+        public QueryResult(MappingConfig config, DbDataReader reader, Type[] types)
         {
             _config = config;
             _reader = reader;

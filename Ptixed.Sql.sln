@@ -1,17 +1,19 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.168
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33205.214
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ptixed.Sql", "Ptixed.Sql\Ptixed.Sql.csproj", "{E701E6AA-5383-43FE-B596-92C5AF7557E5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ptixed.Sql", "Ptixed.Sql\Ptixed.Sql.csproj", "{E701E6AA-5383-43FE-B596-92C5AF7557E5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ptixed.Sql.Tests", "Ptixed.Sql.Tests\Ptixed.Sql.Tests.csproj", "{C42F1ED8-9220-440B-86F7-EFB0D7CB1DD8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ptixed.Sql.Tests", "Ptixed.Sql.Tests\Ptixed.Sql.Tests.csproj", "{C42F1ED8-9220-440B-86F7-EFB0D7CB1DD8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{61269030-403D-4A27-8B6F-52A7F78A0D7C}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
 		README.md = README.md
 	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ptixed.Sql.SqlServer", "Ptixed.Sql.SqlServer\Ptixed.Sql.SqlServer.csproj", "{606E057B-CA06-4A06-966C-60C2A3E3C645}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{C42F1ED8-9220-440B-86F7-EFB0D7CB1DD8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C42F1ED8-9220-440B-86F7-EFB0D7CB1DD8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C42F1ED8-9220-440B-86F7-EFB0D7CB1DD8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{606E057B-CA06-4A06-966C-60C2A3E3C645}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{606E057B-CA06-4A06-966C-60C2A3E3C645}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{606E057B-CA06-4A06-966C-60C2A3E3C645}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{606E057B-CA06-4A06-966C-60C2A3E3C645}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

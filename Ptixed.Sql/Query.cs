@@ -2,14 +2,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using System.Data.Common;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Ptixed.Sql
 {
-    public class Query
+    public abstract class Query<TParameter> 
+        where TParameter : DbParameter, new()
     {
         private readonly List<FormattableString> _parts =  new List<FormattableString>();
         public bool IsEmpty => _parts.Count == 0;
@@ -19,38 +19,39 @@ namespace Ptixed.Sql
         public Query() { }
         public Query(FormattableString query) => Append(query);
 
-        public static Query Unsafe(string query) => new Query(FormattableStringFactory.Create(query));
-
-        public Query Append(FormattableString query)
+        public Query<TParameter> Append(FormattableString query)
         {
             _parts.Add(query);
             return this;
         }
         
-        public Query Append(Query query)
+        public Query<TParameter> Append(Query<TParameter> query)
         {
             _parts.AddRange(query._parts);
             return this;
         }
 
-        public Query Append(FormattableString separator, IEnumerable<Query> parts) => Append(Join(separator, parts));
-
-        public static Query Join(FormattableString separator, IEnumerable<Query> parts)
+        public Query<TParameter> Append(FormattableString separator, IEnumerable<Query<TParameter>> parts)
         {
-            var query = new Query();
             using (var e = parts.GetEnumerator())
                 if (e.MoveNext())
                 {
-                    query.Append(e.Current);
-                    while(e.MoveNext())
-                        query.Append(separator).Append(e.Current);
+                    Append(e.Current);
+                    while (e.MoveNext())
+                        Append(separator).Append(e.Current);
                 }
-            return query;
+            return this;
         }
-        
-        public override string ToString() => ToSql(new SqlCommand(), new MappingConfig()).CommandText;
 
-        public SqlCommand ToSql(SqlCommand command, MappingConfig mapping)
+        public override string ToString() => ToString(new MappingConfig());
+
+        public string ToString(MappingConfig mc)
+        {
+            var index = 0;
+            return ToSql(ref index, mc).Item1;
+        }
+
+        public DbCommand ToSql(DbCommand command, MappingConfig mapping)
         {
             var index = 0;
             var (text, values) = ToSql(ref index, mapping);
@@ -59,7 +60,7 @@ namespace Ptixed.Sql
             foreach (var (value, i) in values.Select((x, i) => (x, i)))
             {
                 var dbvalue = mapping.ToDb(value?.GetType(), value);
-                var parameter = dbvalue as SqlParameter ?? new SqlParameter { Value = dbvalue };
+                var parameter = dbvalue as DbParameter ?? new TParameter { Value = dbvalue };
                 parameter.ParameterName = i.ToString();
                 command.Parameters.Add(parameter);
             }
@@ -83,7 +84,7 @@ namespace Ptixed.Sql
                         case null:
                             formants.Add("NULL");
                             break;
-                        case Query q:
+                        case Query<TParameter> q:
                             var (text, vs) = q.ToSql(ref index, mapping);
                             values.AddRange(vs);
                             formants.Add(text);
