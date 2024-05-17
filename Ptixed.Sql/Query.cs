@@ -94,9 +94,6 @@ namespace Ptixed.Sql
                             values.AddRange(vs);
                             formants.Add(text);
                             break;
-                        case Type t:
-                            formants.Add(mapping.FormatTableName(Table.Get(t)));
-                            break;
                         case int i:
                             formants.Add(i.ToString());
                             break;

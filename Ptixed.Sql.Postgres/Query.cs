@@ -17,8 +17,11 @@ namespace Ptixed.Sql.Postgres
         {
             switch (o)
             {
+                case Type t:
+                    formants.Add($"\"{Table.Get(t).Name}\"");
+                    return true;
                 case Table tm:
-                    formants.Add($"\"{mapping.FormatTableName(tm)}\"");
+                    formants.Add($"\"{tm.Name}\"");
                     return true;
                 case PhysicalColumn pc:
                     formants.Add($"\"{pc.Name}\"");

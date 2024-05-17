@@ -62,10 +62,5 @@ namespace Ptixed.Sql
 
             return x => x;
         }
-
-        public virtual string FormatTableName(Table table)
-        {
-            return table.Name;
-        }
     }
 }
