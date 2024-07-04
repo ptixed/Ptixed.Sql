@@ -2,7 +2,7 @@
     <PropertyGroup>
         <TargetFrameworks>netstandard2.0</TargetFrameworks>
         <SignAssembly>False</SignAssembly>
-        <Title>Ptixed.Sql.SqlServer</Title>
+        <Title>Ptixed.Sql</Title>
         <Version>0.9.0</Version>
         <Description>Library for interacting with Microsoft SQL databases</Description>
         <Authors>ptixed</Authors>
