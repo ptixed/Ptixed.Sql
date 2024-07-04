@@ -71,7 +71,8 @@ namespace Ptixed.Sql
             return command;
         }
 
-        protected abstract bool Format(object o, ref int index, MappingConfig mapping, List<object> formants, List<object> values);
+        protected abstract string FormatTableName(string name);
+        protected abstract string FormatColumnName(string name);
 
         private (string, List<object>) ToSql(ref int index, MappingConfig mapping)
         {
@@ -81,9 +82,6 @@ namespace Ptixed.Sql
             {
                 var formants = new List<object>();
                 foreach (var argument in part.GetArguments())
-                {
-                    if (Format(argument, ref index, mapping, formants, values))
-                        continue;
                     switch (argument)
                     {
                         case null:
@@ -100,6 +98,18 @@ namespace Ptixed.Sql
                         case string s:
                             values.Add(s);
                             formants.Add("@" + index++.ToString());
+                            break;
+                        case Type type:
+                            formants.Add(FormatTableName(Table.Get(type).Name));
+                            break;
+                        case Table table:
+                            formants.Add(FormatTableName(table.Name));
+                            break;
+                        case PhysicalColumn pc:
+                            formants.Add(FormatColumnName(pc.Name));
+                            break;
+                        case ColumnValue cv:
+                            formants.Add(FormatColumnName(cv.Name));
                             break;
                         case IEnumerable ie:
                             var sb1 = new StringBuilder("(");
@@ -127,7 +137,6 @@ namespace Ptixed.Sql
                             formants.Add("@" + index++.ToString());
                             break;
                     }
-                }
                 sb.Append(string.Format(part.Format, formants.ToArray()));                
             }
             return (sb.ToString(), values);
