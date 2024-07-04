@@ -265,7 +265,6 @@ namespace Ptixed.Sql.Tests.SqlServer
             }
         }
 
-
         [Fact]
         public void TestListInsert()
         {
@@ -343,7 +342,7 @@ namespace Ptixed.Sql.Tests.SqlServer
         }
 
         [Fact]
-        public void FormattableStringWithinFormattableString()
+        public void TestFormattableStringWithinFormattableString()
         {
             using (var db = _db.OpenConnection())
             {
@@ -363,6 +362,19 @@ namespace Ptixed.Sql.Tests.SqlServer
 
                 var result = db.Query<ModelUpsert>(q4).Single();
                 Assert.Equal(result.Id, model.Id);
+            }
+        }
+
+        [Fact]
+        public void TestIEnumerable()
+        {
+            using (var db = _db.OpenConnection())
+            {
+                var s = "2";
+                var q1 = new Query($"1");
+                var q2 = new Query($"{s}");
+                var qs = new[] { q1, q2 };
+                var result = db.ToList<ModelUpsert>($"SELECT * FROM ModelUpsert WHERE Id IN {qs}");
             }
         }
 
