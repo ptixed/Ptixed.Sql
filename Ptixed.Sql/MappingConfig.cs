@@ -37,6 +37,8 @@ namespace Ptixed.Sql
 
         protected virtual Func<object, object> ToDbImpl(Type type)
         {
+            if (type.IsEnum)
+                return x => (int)x;
             return x => x;
         }
 
@@ -59,11 +61,6 @@ namespace Ptixed.Sql
                     : (x is IConvertible c ? c.ToType(type, null) : ((IConvertible)x.ToString()).ToType(type, null));
 
             return x => x;
-        }
-
-        public virtual string FormatTableName(Table table)
-        {
-            return table.Name;
         }
     }
 }

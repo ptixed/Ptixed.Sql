@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using System.Data.Common;
 using System.Linq;
 using System.Threading;
 
@@ -10,13 +10,16 @@ namespace Ptixed.Sql.Impl
     /// <summary>
     /// This class is not thread safe
     /// </summary>
-    public class Database : IDatabase
+    public abstract class Database<TConnection, TCommand, TParameter> : IDatabase<TParameter>
+        where TConnection : DbConnection, new()
+        where TParameter : DbParameter, new()
+        where TCommand : DbCommand, new()
     {
-        private SqlTransaction _transaction;
+        private DbTransaction _transaction;
         private IDisposable _result;
 
         public readonly ConnectionConfig Config;
-        public Lazy<SqlConnection> Connection;
+        public Lazy<TConnection> Connection;
 
         public readonly DiagnosticsClass Diagnostics = new DiagnosticsClass();
 
@@ -24,7 +27,7 @@ namespace Ptixed.Sql.Impl
 
         public class DiagnosticsClass
         {
-            public SqlCommand LastCommand;
+            public TCommand LastCommand;
         }
 
         public Database(ConnectionConfig config)
@@ -33,12 +36,12 @@ namespace Ptixed.Sql.Impl
             Reset();
         }
 
-        private SqlCommand NewCommand()
+        private TCommand NewCommand()
         {
             try { _result?.Dispose(); }
             catch { /* don't care */ }
             
-            var command = new SqlCommand()
+            var command = new TCommand()
             {
                 Connection = Connection.Value,
                 Transaction = _transaction,
@@ -64,24 +67,25 @@ namespace Ptixed.Sql.Impl
         public void Reset()
         {
             Dispose();
-            Connection = new Lazy<SqlConnection>(() =>
+            Connection = new Lazy<TConnection>(() =>
             {
-                var sql = new SqlConnection(Config.ConnectionString);
+                var sql = new TConnection(); 
+                sql.ConnectionString =  Config.ConnectionString;
                 sql.Open();
                 return sql;
             }, LazyThreadSafetyMode.None);
         }
 
-        public int NonQuery(params Query[] query)
+        public int NonQuery(params Query<TParameter>[] query)
         {
             if (query.Length == 0)
                 return 0;
 
-            var command = query.Aggregate((x, y) => x.Append($"\n\n").Append(y)).ToSql(NewCommand(), Config.Mappping);
+            var command = query.Aggregate((x, y) => x.Append($";\n\n").Append(y)).ToSql(NewCommand(), Config.Mappping);
             return command.ExecuteNonQuery();
         }
 
-        public IEnumerable<T> Query<T>(Query query, params Type[] types)
+        public IEnumerable<T> Query<T>(Query<TParameter> query, params Type[] types)
         {
             var command = query.ToSql(NewCommand(), Config.Mappping);
 
@@ -99,11 +103,11 @@ namespace Ptixed.Sql.Impl
         
         private class DatabaseTransaction : IDatabaseTransaction
         {
-            private readonly Database _db;
+            private readonly Database<TConnection, TCommand, TParameter> _db;
             private bool _commited;
             private bool _rolledback;
 
-            public DatabaseTransaction(Database db, IsolationLevel isolation)
+            public DatabaseTransaction(Database<TConnection, TCommand, TParameter> db, IsolationLevel isolation)
             {
                 _db = db;
                 _db._transaction = db.Connection.Value.BeginTransaction(isolation);

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using Ptixed.Sql.Impl;
@@ -32,7 +32,7 @@ namespace Ptixed.Sql
             _dict = new Lazy<Dictionary<string, object>>(() => _values.ToDictionary(x => x.Name, x => x.Value), LazyThreadSafetyMode.None);
         }
 
-        public ColumnValueSet(SqlDataReader reader)
+        public ColumnValueSet(DbDataReader reader)
         {
             var values = new ColumnValue[reader.FieldCount];
             for (var i = 0; i < reader.FieldCount; ++i)

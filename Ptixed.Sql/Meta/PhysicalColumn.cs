@@ -18,7 +18,6 @@
         public static bool operator ==(PhysicalColumn l, PhysicalColumn r) => l?.Equals(r) ?? ReferenceEquals(r, null);
         public static bool operator !=(PhysicalColumn l, PhysicalColumn r) => !(l == r);
 
-        public override string ToString() => $"[{Name}]";
         public override bool Equals(object obj) => obj is PhysicalColumn wl && wl.LogicalColumn == LogicalColumn && wl.Name == Name;
         public override int GetHashCode() => LogicalColumn.GetHashCode() ^ Name.GetHashCode();
 

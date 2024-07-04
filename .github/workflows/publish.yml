@@ -13,12 +13,11 @@ jobs:
         id: publish_nuget
         uses: alirezanet/publish-nuget@v3.0.4
         with:
-          PROJECT_FILE_PATH: Ptixed.Sql/Ptixed.Sql.csproj
+          PROJECT_FILE_PATH: Ptixed.Sql.SqlServer/Ptixed.Sql.SqlServer.csproj
           PACKAGE_NAME: Ptixed.Sql
           
-          VERSION_FILE_PATH: Ptixed.Sql/Ptixed.Sql.csproj
+          VERSION_FILE_PATH: Ptixed.Sql.SqlServer/Ptixed.Sql.SqlServer.csproj
           VERSION_REGEX: ^\s*<Version>(.*)<\/Version>\s*$
-          # VERSION_STATIC: 1.0.0
 
           TAG_COMMIT: true
           TAG_FORMAT: v*

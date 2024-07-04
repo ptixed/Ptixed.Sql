@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Reflection;
 using Ptixed.Sql.Impl;
@@ -71,20 +72,10 @@ namespace Ptixed.Sql.Meta
         public static bool operator ==(Table l, Table r) => l?.Equals(r) ?? ReferenceEquals(r, null);
         public static bool operator !=(Table l, Table r) => !(l == r);
 
-        public override string ToString() => $"[{Name}]";
         public override bool Equals(object obj) => obj is Table t && t.Name == Name;
         public override int GetHashCode() => Name.GetHashCode();
 
         public object CreateNew() => _ctor(null);
-
-        public Query GetPrimaryKeyCondition(object o)
-        {
-            var query = new Query();
-            query.Append($"(");
-            query.Append($" AND ", PrimaryKey.FromValueToQuery(o).Select(column => new Query($"{column} = {column.Value}")));
-            query.Append($")");
-            return query;
-        }
 
         public ICollection<ColumnValue> ToQuery(List<PhysicalColumn> columns, object o)
         {

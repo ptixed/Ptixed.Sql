@@ -2,14 +2,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using System.Data.Common;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using System.Reflection;
 using System.Text;
 
 namespace Ptixed.Sql
 {
-    public class Query
+    public abstract class Query<TParameter> 
+        where TParameter : DbParameter, new()
     {
         private readonly List<FormattableString> _parts =  new List<FormattableString>();
         public bool IsEmpty => _parts.Count == 0;
@@ -19,47 +20,42 @@ namespace Ptixed.Sql
         public Query() { }
         public Query(FormattableString query) => Append(query);
 
-        public static Query Unsafe(string query) => new Query(FormattableStringFactory.Create(query));
-
-        public Query Append(FormattableString query)
+        public Query<TParameter> Append(FormattableString query)
         {
             _parts.Add(query);
             return this;
         }
         
-        public Query Append(Query query)
+        public Query<TParameter> Append(Query<TParameter> query)
         {
             _parts.AddRange(query._parts);
             return this;
         }
 
-        public Query Append(FormattableString separator, IEnumerable<Query> parts) => Append(Join(separator, parts));
-
-        public static Query Join(FormattableString separator, IEnumerable<Query> parts)
+        public Query<TParameter> Append(FormattableString separator, IEnumerable<Query<TParameter>> parts)
         {
-            var query = new Query();
             using (var e = parts.GetEnumerator())
                 if (e.MoveNext())
                 {
-                    query.Append(e.Current);
-                    while(e.MoveNext())
-                        query.Append(separator).Append(e.Current);
+                    Append(e.Current);
+                    while (e.MoveNext())
+                        Append(separator).Append(e.Current);
                 }
-            return query;
+            return this;
         }
-        
-        public override string ToString() => ToSql(new SqlCommand(), new MappingConfig()).CommandText;
 
-        public SqlCommand ToSql(SqlCommand command, MappingConfig mapping)
+        public override string ToString() => ToSql(new List<object>(), new MappingConfig());
+
+        public DbCommand ToSql(DbCommand command, MappingConfig mapping)
         {
-            var index = 0;
-            var (text, values) = ToSql(ref index, mapping);
+            var values = new List<object>();
+            var text = ToSql(values, mapping);
 
             command.CommandText = text;
             foreach (var (value, i) in values.Select((x, i) => (x, i)))
             {
                 var dbvalue = mapping.ToDb(value?.GetType(), value);
-                var parameter = dbvalue as SqlParameter ?? new SqlParameter { Value = dbvalue };
+                var parameter = dbvalue as DbParameter ?? new TParameter { Value = dbvalue };
                 parameter.ParameterName = i.ToString();
                 command.Parameters.Add(parameter);
             }
@@ -70,72 +66,75 @@ namespace Ptixed.Sql
             return command;
         }
 
-        private (string, List<object>) ToSql(ref int index, MappingConfig mapping)
+        protected abstract string FormatTableName(string name);
+        protected abstract string FormatColumnName(string name);
+
+        private string ToSql(List<object> values, MappingConfig mapping)
         {
             var sb = new StringBuilder();
-            var values = new List<object>();
             foreach (var part in _parts)
+                sb.Append(ToSqlPart(values, mapping, part));
+            return sb.ToString();
+        }
+
+        private string ToSqlPart(List<object> values, MappingConfig mapping, FormattableString part)
+        {
+            var formants = new List<string>();
+            foreach (var argument in part.GetArguments())
+                ToSqlArgument(values, mapping, formants, argument);
+            return string.Format(part.Format, formants.ToArray());
+        }
+
+        private void ToSqlArgument(List<object> values, MappingConfig mapping, List<string> formants, object argument)
+        {
+            switch (argument)
             {
-                var formants = new List<object>();
-                foreach (var argument in part.GetArguments())
-                    switch (argument)
+                case null:
+                    formants.Add("NULL");
+                    break;
+                case FormattableString fs:
+                    formants.Add(ToSqlPart(values, mapping, fs));
+                    break;
+                case Query<TParameter> q:
+                    formants.Add(q.ToSql(values, mapping));
+                    break;
+                case int i:
+                    formants.Add(i.ToString());
+                    break;
+                case string s:
+                    formants.Add($"@{values.Count}");
+                    values.Add(s);
+                    break;
+                case Type type:
+                    formants.Add(FormatTableName(Table.Get(type).Name));
+                    break;
+                case Table table:
+                    formants.Add(FormatTableName(table.Name));
+                    break;
+                case PhysicalColumn pc:
+                    formants.Add(FormatColumnName(pc.Name));
+                    break;
+                case ColumnValue cv:
+                    formants.Add(FormatColumnName(cv.Name));
+                    break;
+                case IEnumerable ie:
+                    var formants1 = new List<string>();
+                    var enumerator = ie.GetEnumerator();
+                    if (!enumerator.MoveNext())
+                        formants1.Add("SELECT TOP 0 0");
+                    else
                     {
-                        case null:
-                            formants.Add("NULL");
-                            break;
-                        case Query q:
-                            var (text, vs) = q.ToSql(ref index, mapping);
-                            values.AddRange(vs);
-                            formants.Add(text);
-                            break;
-                        case Table tm:
-                            formants.Add(mapping.FormatTableName(tm));
-                            break;
-                        case Type t:
-                            formants.Add(mapping.FormatTableName(Table.Get(t)));
-                            break;
-                        case PhysicalColumn pc:
-                            formants.Add(pc.ToString());
-                            break;
-                        case ColumnValue cv:
-                            formants.Add(cv.ToString());
-                            break;
-                        case int i:
-                            formants.Add(i.ToString());
-                            break;
-                        case string s:
-                            values.Add(s);
-                            formants.Add("@" + index++.ToString());
-                            break;
-                        case IEnumerable ie:
-                            var sb1 = new StringBuilder("(");
-                            using (var enumerator = ie.Cast<object>().GetEnumerator())
-                            {
-                                if (!enumerator.MoveNext())
-                                    sb1.Append("SELECT TOP 0 0");
-                                else
-                                {
-                                    values.Add(enumerator.Current);
-                                    sb1.Append("@" + index++.ToString());
-                                    while (enumerator.MoveNext())
-                                    {
-                                        sb1.Append(", ");
-                                        values.Add(enumerator.Current);
-                                        sb1.Append("@" + index++.ToString());
-                                    }
-                                }
-                            }
-                            sb1.Append(")");
-                            formants.Add(sb1.ToString());
-                            break;
-                        default:
-                            values.Add(argument);
-                            formants.Add("@" + index++.ToString());
-                            break;
+                        ToSqlArgument(values, mapping, formants1, enumerator.Current);
+                        while (enumerator.MoveNext())
+                            ToSqlArgument(values, mapping, formants1, enumerator.Current);
                     }
-                sb.Append(string.Format(part.Format, formants.ToArray()));                
+                    formants.Add($"({string.Join(", ", formants1)})");
+                    break;
+                default:
+                    formants.Add($"@{values.Count}");
+                    values.Add(argument);
+                    break;
             }
-            return (sb.ToString(), values);
         }
     }
 }
