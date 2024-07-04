@@ -2,27 +2,21 @@ name: publish to nuget
 on:
   push:
     branches:
-      - master
+    - master
 jobs:
   publish:
-    name: build, pack & publish
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: publish on version change
-        id: publish_nuget
-        uses: alirezanet/publish-nuget@v3.0.4
-        with:
-          PROJECT_FILE_PATH: Ptixed.Sql.SqlServer/Ptixed.Sql.SqlServer.csproj
-          PACKAGE_NAME: Ptixed.Sql
-          
-          VERSION_FILE_PATH: Ptixed.Sql.SqlServer/Ptixed.Sql.SqlServer.csproj
-          VERSION_REGEX: ^\s*<Version>(.*)<\/Version>\s*$
-
-          TAG_COMMIT: true
-          TAG_FORMAT: v*
-          
-          NUGET_KEY: ${{secrets.NUGET_API_KEY}}
-          NUGET_SOURCE: https://api.nuget.org
-
-          INCLUDE_SYMBOLS: false
+    - uses: actions/checkout@v2
+    - uses: alirezanet/publish-nuget@v3.0.4
+      with:
+        PROJECT_FILE_PATH: Ptixed.Sql/Ptixed.Sql.csproj
+        NUGET_KEY: ${{secrets.NUGET_KEY}}
+        TAG_FORMAT: Ptixed.Sql.v*
+        TAG_COMMIT: true
+    - uses: alirezanet/publish-nuget@v3.0.4
+      with:
+        PROJECT_FILE_PATH: Ptixed.Sql.SqlServer/Ptixed.Sql.SqlServer.csproj
+        NUGET_KEY: ${{secrets.NUGET_KEY}}
+        TAG_FORMAT: Ptixed.Sql.SqlServer.v*
+        TAG_COMMIT: true

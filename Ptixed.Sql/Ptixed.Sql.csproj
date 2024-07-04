@@ -1,6 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFrameworks>netstandard2.0</TargetFrameworks>
+        <SignAssembly>False</SignAssembly>
+        <Title>Ptixed.Sql</Title>
+        <Version>1.0.1</Version>
+        <Description>Library for interacting with SQL databases; base classes</Description>
+        <Authors>ptixed</Authors>
+        <RepositoryUrl>https://github.com/ptixed/Ptixed.Sql</RepositoryUrl>
+        <PackageTags>ptixed sql database db</PackageTags>
+        <AssemblyVersion>1.0.1</AssemblyVersion>
+        <FileVersion>1.0.1</FileVersion>
+        <Company />
+        <PackageIconUrl>https://raw.githubusercontent.com/ptixed/Ptixed.Sql/master/logo-nuget.png</PackageIconUrl>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetFrameworks>netstandard2.0</TargetFrameworks>
     </PropertyGroup>
     <ItemGroup>
       <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
