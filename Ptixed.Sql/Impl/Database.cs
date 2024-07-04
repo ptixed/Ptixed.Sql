@@ -10,7 +10,8 @@ namespace Ptixed.Sql.Impl
     /// <summary>
     /// This class is not thread safe
     /// </summary>
-    public abstract class Database<TCommand, TParameter> : IDatabase<TParameter>
+    public abstract class Database<TConnection, TCommand, TParameter> : IDatabase<TParameter>
+        where TConnection : DbConnection, new()
         where TParameter : DbParameter, new()
         where TCommand : DbCommand, new()
     {
@@ -18,7 +19,7 @@ namespace Ptixed.Sql.Impl
         private IDisposable _result;
 
         public readonly ConnectionConfig Config;
-        public Lazy<DbConnection> Connection;
+        public Lazy<TConnection> Connection;
 
         public readonly DiagnosticsClass Diagnostics = new DiagnosticsClass();
 
@@ -66,15 +67,14 @@ namespace Ptixed.Sql.Impl
         public void Reset()
         {
             Dispose();
-            Connection = new Lazy<DbConnection>(() =>
+            Connection = new Lazy<TConnection>(() =>
             {
-                var sql = CreateConnection(Config.ConnectionString);
+                var sql = new TConnection(); 
+                sql.ConnectionString =  Config.ConnectionString;
                 sql.Open();
                 return sql;
             }, LazyThreadSafetyMode.None);
         }
-
-        protected abstract DbConnection CreateConnection(string connectionString);
 
         public int NonQuery(params Query<TParameter>[] query)
         {
@@ -103,11 +103,11 @@ namespace Ptixed.Sql.Impl
         
         private class DatabaseTransaction : IDatabaseTransaction
         {
-            private readonly Database<TCommand, TParameter> _db;
+            private readonly Database<TConnection, TCommand, TParameter> _db;
             private bool _commited;
             private bool _rolledback;
 
-            public DatabaseTransaction(Database<TCommand, TParameter> db, IsolationLevel isolation)
+            public DatabaseTransaction(Database<TConnection, TCommand, TParameter> db, IsolationLevel isolation)
             {
                 _db = db;
                 _db._transaction = db.Connection.Value.BeginTransaction(isolation);

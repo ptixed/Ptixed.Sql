@@ -12,5 +12,11 @@ namespace Ptixed.Sql
             Name = name;
             Value = value == DBNull.Value ? null : value;
         }
+
+        public void Deconstruct(out string name, out object value)
+        {
+            name = Name;
+            value = Value;
+        }
     }
 }

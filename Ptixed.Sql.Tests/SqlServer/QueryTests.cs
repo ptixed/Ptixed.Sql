@@ -21,7 +21,10 @@ namespace Ptixed.Sql.Tests.SqlServer
         public void Dispose()
         {
             using (var db = _db.OpenConnection())
+            {
                 db.NonQuery($"DELETE FROM Model");
+                db.NonQuery($"DELETE FROM Model2");
+            }
         }
 
         [Fact]
@@ -336,6 +339,28 @@ namespace Ptixed.Sql.Tests.SqlServer
                 Assert.NotNull(byName);
                 Assert.True(byName.First().Age == 21);
                 Assert.True(byName.First().Id != inserted.Id);
+            }
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        [InlineData(10)]
+        public void TestBulkInsert(int n)
+        {
+            using (var db = _db.OpenConnection())
+            {
+                var data = new List<Model2>();
+                for (var i = 0; i < n; ++i)
+                    data.Add(new Model2
+                    {
+                        ModelId = i
+                    });
+
+                db.BulkInsert(data);
+
+                var inserted = db.Single<int>($"SELECT COUNT(*) FROM Model2");
+                Assert.Equal(n, inserted);
             }
         }
     }
