@@ -342,6 +342,30 @@ namespace Ptixed.Sql.Tests.SqlServer
             }
         }
 
+        [Fact]
+        public void FormattableStringWithinFormattableString()
+        {
+            using (var db = _db.OpenConnection())
+            {
+                var model = new ModelUpsert
+                {
+                    Age = 1,
+                    Name = "John Doe"
+                };
+
+                var inserted = db.Insert(model);
+                Assert.True(inserted.Id > 0);
+
+                FormattableString q1 = $"{model.Id}";
+                FormattableString q2 = $"Id = {q1}";
+                Query q3 = new Query($"WHERE {q2} or Id = {q1}");
+                Query q4 = new Query($"SELECT * FROM ModelUpsert {q3}");
+
+                var result = db.Query<ModelUpsert>(q4).Single();
+                Assert.Equal(result.Id, model.Id);
+            }
+        }
+
         [Theory]
         [InlineData(0)]
         [InlineData(1)]
