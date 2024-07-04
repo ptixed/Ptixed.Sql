@@ -14,7 +14,7 @@
         <PackageIconUrl>https://raw.githubusercontent.com/ptixed/Ptixed.Sql/master/logo-nuget.png</PackageIconUrl>
     </PropertyGroup>
     <ItemGroup>
-      <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
+      <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
       <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
     </ItemGroup>
 </Project>
