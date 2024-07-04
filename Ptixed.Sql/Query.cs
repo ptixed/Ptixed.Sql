@@ -44,18 +44,12 @@ namespace Ptixed.Sql
             return this;
         }
 
-        public override string ToString() => ToString(new MappingConfig());
-
-        public string ToString(MappingConfig mc)
-        {
-            var index = 0;
-            return ToSql(ref index, mc).Item1;
-        }
+        public override string ToString() => ToSql(new List<object>(), new MappingConfig());
 
         public DbCommand ToSql(DbCommand command, MappingConfig mapping)
         {
-            var index = 0;
-            var (text, values) = ToSql(ref index, mapping);
+            var values = new List<object>();
+            var text = ToSql(values, mapping);
 
             command.CommandText = text;
             foreach (var (value, i) in values.Select((x, i) => (x, i)))
@@ -75,22 +69,16 @@ namespace Ptixed.Sql
         protected abstract string FormatTableName(string name);
         protected abstract string FormatColumnName(string name);
 
-        private (string, List<object>) ToSql(ref int index, MappingConfig mapping)
+        private string ToSql(List<object> values, MappingConfig mapping)
         {
             var sb = new StringBuilder();
-            var values = new List<object>();
             foreach (var part in _parts)
-            {
-                var (text, vs) = ToSqlPart(ref index, part, mapping);
-                sb.Append(text);
-                values.AddRange(vs);
-            }
-            return (sb.ToString(), values);
+                sb.Append(ToSqlPart(values, part, mapping));
+            return sb.ToString();
         }
 
-        private (string, List<object>) ToSqlPart(ref int index, FormattableString part, MappingConfig mapping)
+        private string ToSqlPart(List<object> values, FormattableString part, MappingConfig mapping)
         {
-            var values = new List<object>();
             var formants = new List<object>();
             foreach (var argument in part.GetArguments())
                 switch (argument)
@@ -99,25 +87,17 @@ namespace Ptixed.Sql
                         formants.Add("NULL");
                         break;
                     case FormattableString fs:
-                        {
-                            var (text, vs) = ToSqlPart(ref index, fs, mapping);
-                            values.AddRange(vs);
-                            formants.Add(text);
-                            break;
-                        }
+                        formants.Add(ToSqlPart(values, fs, mapping));
+                        break;
                     case Query<TParameter> q:
-                        {
-                            var (text, vs) = q.ToSql(ref index, mapping);
-                            values.AddRange(vs);
-                            formants.Add(text);
-                            break;
-                        }
+                        formants.Add(q.ToSql(values, mapping));
+                        break;
                     case int i:
                         formants.Add(i.ToString());
                         break;
                     case string s:
+                        formants.Add($"@{values.Count}");
                         values.Add(s);
-                        formants.Add("@" + index++.ToString());
                         break;
                     case Type type:
                         formants.Add(FormatTableName(Table.Get(type).Name));
@@ -139,13 +119,12 @@ namespace Ptixed.Sql
                                 sb1.Append("SELECT TOP 0 0");
                             else
                             {
+                                formants.Add($"@{values.Count}");
                                 values.Add(enumerator.Current);
-                                sb1.Append("@" + index++.ToString());
                                 while (enumerator.MoveNext())
                                 {
-                                    sb1.Append(", ");
+                                    sb1.Append($", @{values.Count}");
                                     values.Add(enumerator.Current);
-                                    sb1.Append("@" + index++.ToString());
                                 }
                             }
                         }
@@ -153,11 +132,11 @@ namespace Ptixed.Sql
                         formants.Add(sb1.ToString());
                         break;
                     default:
+                        formants.Add($"@{values.Count}");
                         values.Add(argument);
-                        formants.Add("@" + index++.ToString());
                         break;
                 }
-            return (string.Format(part.Format, formants.ToArray()), values);
+            return string.Format(part.Format, formants.ToArray());
         }
     }
 }
