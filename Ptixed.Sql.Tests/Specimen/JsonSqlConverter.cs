@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using Newtonsoft.Json;
 using Ptixed.Sql.Meta;
+using Ptixed.Sql.Util;
 
 namespace Ptixed.Sql.Tests.Specimen
 {
@@ -10,13 +12,13 @@ namespace Ptixed.Sql.Tests.Specimen
         private readonly string _name;
         public JsonSqlConverter(string name) => _name = name;
 
-        public List<ColumnAttribute> GetColumns(PropertyInfo member)
+        public List<ColumnAttribute> GetColumns(MemberInfo member)
             => new List<ColumnAttribute> { new ColumnAttribute(_name) };
 
         public List<ColumnValue> ToQuery(object value, LogicalColumn meta)
             => new List<ColumnValue> { new ColumnValue(_name, JsonConvert.SerializeObject(value)) };
 
         public object FromQuery(ColumnValueSet columns, LogicalColumn meta, MappingConfig mapping)
-            => JsonConvert.DeserializeObject(columns[_name]?.ToString(), meta.Member.PropertyType);
+           => JsonConvert.DeserializeObject(columns[_name]?.ToString(), meta.Member.GetMemberType());
     }
 }

@@ -40,9 +40,11 @@ namespace Ptixed.Sql.Meta
 
             var lookup = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                 .Where(x => x.GetIndexParameters().Length == 0)
+                .Cast<MemberInfo>()
+                .Concat(type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                 .Select(x => LogicalColumn.TryCreate(this, x))
                 .Where(x => x != null)
-                .ToDictionary<LogicalColumn, LogicalColumn, MemberInfo>(x => x, x => x.Member);
+                .ToDictionary(x => x, x => x.Member);
             _accessor = new Accessor<LogicalColumn>(type, lookup);
 
             var ctor = type.GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null);

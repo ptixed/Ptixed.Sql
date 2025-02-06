@@ -1,36 +1,21 @@
 ﻿using Ptixed.Sql.Impl;
-using System.Linq.Expressions;
+using System;
 using System.Reflection;
 
 namespace Ptixed.Sql.Util
 {
-    internal static class Reflection
+    public static class Reflection
     {
-        public static object GetValue(MemberInfo member, object owner)
+        public static Type GetMemberType(this MemberInfo member)
         {
-            var accessor = TypeAccessor.Get(member.DeclaringType);
             switch (member)
             {
                 case FieldInfo fi:
-                    return accessor[owner, fi];
+                    return fi.FieldType;
                 case PropertyInfo pi:
-                    return accessor[owner, pi];
+                    return pi.PropertyType;
                 default:
                     throw PtixedException.InvalidExpression(member);
-            }
-        }
-
-        public static object Execute(Expression expr)
-        {
-            switch (expr)
-            {
-                case ConstantExpression ce:
-                    return ce.Value;
-                case MemberExpression me:
-                    var owner = Execute(me.Expression);
-                    return GetValue(me.Member, owner);
-                default:
-                    throw PtixedException.InvalidExpression(expr);
             }
         }
     }

@@ -2,7 +2,7 @@
 
 namespace Ptixed.Sql.Meta
 {
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
     public class ColumnAttribute : Attribute
     {
         public readonly string ColumnName;

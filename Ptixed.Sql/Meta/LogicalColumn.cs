@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Ptixed.Sql.Impl;
+using Ptixed.Sql.Util;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -8,11 +10,11 @@ namespace Ptixed.Sql.Meta
     {
         public readonly Table Table;
         public readonly PhysicalColumn[] PhysicalColumns;
-        public readonly PropertyInfo Member;
+        public readonly MemberInfo Member;
         public readonly ISqlConverter Converter;
         public readonly string Name;
 
-        private LogicalColumn(Table table, PropertyInfo member, ColumnAttribute column, ISqlConverter converter)
+        private LogicalColumn(Table table, MemberInfo member, ColumnAttribute column, ISqlConverter converter)
         {
             Table = table;
             Member = member;
@@ -30,7 +32,7 @@ namespace Ptixed.Sql.Meta
                 PhysicalColumns = new[] { new PhysicalColumn(this, column?.ColumnName ?? Name, column?.IsAutoIncrement ?? false) };
         }
 
-        public static LogicalColumn TryCreate(Table table, PropertyInfo member)
+        public static LogicalColumn TryCreate(Table table, MemberInfo member)
         {
             var attrs = member.GetCustomAttributes().ToList();
 
@@ -43,11 +45,19 @@ namespace Ptixed.Sql.Meta
                 return null;
 
             if (column == null)
-            {
-                var ispublic = member.GetMethod?.IsPublic == true || member.SetMethod?.IsPublic == true;
-                if (!ispublic)
-                    return null;
-            }
+                switch (member)
+                {
+                    case PropertyInfo pi:
+                        if (pi.GetMethod?.IsPublic != true && pi.SetMethod?.IsPublic != true)
+                            return null;
+                        break;
+                    case FieldInfo fi:
+                        if (!fi.IsPublic)
+                            return null;
+                        break;
+                    default:
+                        throw PtixedException.InvalidExpression(member);
+                }
 
             return new LogicalColumn(table, member, column, converter?.CreateConverter());
         }
@@ -64,7 +74,7 @@ namespace Ptixed.Sql.Meta
         {
             if (Converter != null)
                 return Converter.FromQuery(columns, this, mapping);
-            return mapping.FromDb(Member.PropertyType, columns[PhysicalColumns[0].Name]);
+            return mapping.FromDb(Member.GetMemberType(), columns[PhysicalColumns[0].Name]);
         }
 
         public static bool operator ==(LogicalColumn l, LogicalColumn r) => l?.Equals(r) ?? ReferenceEquals(r, null);
