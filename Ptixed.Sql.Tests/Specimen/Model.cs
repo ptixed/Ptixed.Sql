@@ -24,7 +24,9 @@ namespace Ptixed.Sql.Tests.Specimen
         [SqlConverter(typeof(JsonSqlConverter), "sub")]
         public SubModelClass SubModel { get; set; }
 
+        private string IgnoreMe = "IgnoreMe";
         public string SomeConstant = "SomeConstantValue";
+
         public string DROP => "DROP";
 
         [Column("created")]

@@ -43,7 +43,7 @@ namespace Ptixed.Sql.SqlServer
             query.Append($", ", columns.Select(x => new Query($"{x}")));
             query.Append($") OUTPUT ");
             query.Append($", ", table.PhysicalColumns.Select(column => new Query($"INSERTED.{column}")));
-            query.Append($"VALUES ");
+            query.Append($" VALUES ");
             query.Append($", ", entities.Select(entity => 
             {
                 var values = table.ToQuery(columns, entity)
@@ -99,7 +99,7 @@ namespace Ptixed.Sql.SqlServer
         public static Query Insert(string table, IDictionary<string, object> values)
         {
             var query = new Query();
-            query.Append(Query.Unsafe($"INSERT INTO [{table}] ("));
+            query.Append(Query.Unsafe($"INSERT INTO {table} ("));
             query.Append($", ", values.Select(x => new Query($"{new PhysicalColumn(null, x.Key, false)}")));
             query.Append($") VALUES (");
             query.Append($", ", values.Select(x => new Query($"{x.Value}")));
