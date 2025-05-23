@@ -75,6 +75,11 @@ namespace Ptixed.Sql.SqlServer
             return Insert(db, new [] { entity })[0];
         }
 
+        public static List<T> Insert<T>(this IDatabase db, IEnumerable<T> entities)
+        {
+            return Insert(db, entities.ToArray());
+        }
+
         public static string Insert(this IDatabase db, string table, IDictionary<string, object> values)
         {
             return db.Query<string>(QueryHelper.Insert(table, values)).Single();
@@ -86,12 +91,22 @@ namespace Ptixed.Sql.SqlServer
                 return 0;
             return db.NonQuery(QueryHelper.Update(entities));
         }
+        
+        public static int Update(this IDatabase db, IEnumerable<object> entities)
+        {
+            return Update(db, entities.ToArray());
+        }
 
         public static int Delete(this IDatabase db, params object[] entities)
         {
             if (entities.Length == 0)
                 return 0;
             return db.NonQuery(QueryHelper.Delete(entities));
+        }
+
+        public static int Delete(this IDatabase db, IEnumerable<object> entities)
+        {
+            return Delete(db, entities.ToArray());
         }
 
         public static int Delete<T>(this IDatabase db, params object[] ids)

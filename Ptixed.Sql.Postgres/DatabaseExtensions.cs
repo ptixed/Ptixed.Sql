@@ -66,7 +66,10 @@ namespace Ptixed.Sql.Postgres
 
             return entities.ToList();
         }
-
+        public static List<T> Insert<T>(this IDatabase db, IEnumerable<T> entities)
+        {
+            return Insert(db, entities.ToArray());
+        }
         public static T Insert<T>(this IDatabase db, T entity)
         {
             return Insert(db, new [] { entity })[0];
@@ -78,7 +81,14 @@ namespace Ptixed.Sql.Postgres
                 return 0;
             return db.NonQuery(QueryHelper.Update(entities));
         }
-
+        public static int Update(this IDatabase db, IEnumerable<object> entities)
+        {
+            return Update(db, entities.ToArray());
+        }        
+        public static int Delete(this IDatabase db, IEnumerable<object> entities)
+        {
+            return Delete(db, entities.ToArray());
+        }
         public static int Delete(this IDatabase db, params object[] entities)
         {
             if (entities.Length == 0)
