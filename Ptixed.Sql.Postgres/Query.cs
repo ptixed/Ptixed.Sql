@@ -6,7 +6,12 @@ namespace Ptixed.Sql.Postgres
 {
     public class Query : Query<NpgsqlParameter>
     {
-        public static Query Unsafe(string query) => new Query(FormattableStringFactory.Create(query));
+        public static Query Unsafe(string query)
+        {
+            query = query.Replace("}", "}}");
+            query = query.Replace("{", "{{");
+            return new Query(FormattableStringFactory.Create(query));
+        }
 
         public Query() { }
         public Query(FormattableString query) : base(query) { }
