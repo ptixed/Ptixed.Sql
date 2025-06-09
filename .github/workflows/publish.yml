@@ -20,3 +20,9 @@ jobs:
         NUGET_KEY: ${{secrets.NUGET_KEY}}
         TAG_FORMAT: Ptixed.Sql.SqlServer.v*
         TAG_COMMIT: true
+    - uses: alirezanet/publish-nuget@v3.0.4
+      with:
+        PROJECT_FILE_PATH: Ptixed.Sql.Postgres/Ptixed.Sql.Postgres.csproj
+        NUGET_KEY: ${{secrets.NUGET_KEY}}
+        TAG_FORMAT: Ptixed.Sql.Postgres.v*
+        TAG_COMMIT: true
