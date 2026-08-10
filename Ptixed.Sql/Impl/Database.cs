@@ -87,7 +87,15 @@ namespace Ptixed.Sql.Impl
             {
                 _db = db;
                 var connection = db.Connect();
-                _db._transaction = (connection, connection.BeginTransaction(isolation));
+                try
+                {
+                    _db._transaction = (connection, connection.BeginTransaction(isolation));
+                }
+                catch
+                {
+                    connection.Dispose();
+                    throw;
+                }
             }
 
             public void Commit()
@@ -108,11 +116,8 @@ namespace Ptixed.Sql.Impl
                     _rolledback = true;
                 }
 
-                try { _db._transaction?.Transaction?.Dispose(); }
-                catch { /* don't care */ }
-
-                try { _db._transaction?.Connection?.Dispose(); }
-                catch { /* don't care */ }
+                _db._transaction?.Transaction?.Dispose();
+                _db._transaction?.Connection?.Dispose();
                 
                 _db._transaction = null;
             }

@@ -25,9 +25,9 @@ namespace Ptixed.Sql.Impl
 
         public void Dispose()
         {
-            if (_transaction != null)
-                return;
-            _connection.Dispose();
+            Command.Dispose();
+            if (_transaction == null)
+                _connection.Dispose();
         }
     }
 }
