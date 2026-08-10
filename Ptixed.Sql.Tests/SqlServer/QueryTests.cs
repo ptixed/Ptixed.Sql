@@ -20,7 +20,7 @@ namespace Ptixed.Sql.Tests.SqlServer
 
         public void Dispose()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 db.NonQuery($"DELETE FROM Model");
                 db.NonQuery($"DELETE FROM Model2");
@@ -30,7 +30,7 @@ namespace Ptixed.Sql.Tests.SqlServer
         [Fact]
         public void TestQueries()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var model = new Model
                 {
@@ -70,7 +70,7 @@ namespace Ptixed.Sql.Tests.SqlServer
         [Fact]
         public void TestRelations()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var model = db.Insert(new Model
                 {
@@ -103,7 +103,7 @@ namespace Ptixed.Sql.Tests.SqlServer
         [Fact]
         public void TestTransactions()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var model = new Model
                 {
@@ -131,7 +131,7 @@ namespace Ptixed.Sql.Tests.SqlServer
         [Fact]
         public void TestScalarQueries()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var model = new Model
                 {
@@ -159,7 +159,7 @@ namespace Ptixed.Sql.Tests.SqlServer
         [Fact]
         public void TestModelWithNoPk()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var model = new ModelWithNoPk
                 {
@@ -192,7 +192,7 @@ namespace Ptixed.Sql.Tests.SqlServer
         [Fact]
         public void TestDictionaryResult()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var model = new Model
                 {
@@ -215,7 +215,7 @@ namespace Ptixed.Sql.Tests.SqlServer
         [Fact]
         public void TestTuples()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var model = db.Insert(new Model
                 {
@@ -245,7 +245,7 @@ namespace Ptixed.Sql.Tests.SqlServer
         [Fact]
         public void TestAffectedRows()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 db.Insert(new Model2
                 {
@@ -268,22 +268,22 @@ namespace Ptixed.Sql.Tests.SqlServer
         [Fact]
         public void TestListInsert()
         {
-            using (var db = _db.OpenConnection())
-                Assert.Throws<SqlException>(() =>
-                    db.Insert(new List<Model2>
-                    { 
-                        new Model2
-                        {
-                            ModelId = 1
-                        }
-                    })
-                );
+            var db = _db.CreateDatabase();
+            Assert.Throws<SqlException>(() =>
+                db.Insert(new List<Model2>
+                { 
+                    new Model2
+                    {
+                        ModelId = 1
+                    }
+                })
+            );
         }
 
         [Fact]
         public void TestDictionaryInsert()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var autoincr = db.Insert("Model", new Dictionary<string, object>
                 {
@@ -302,7 +302,7 @@ namespace Ptixed.Sql.Tests.SqlServer
         [Fact]
         public void TestUpsertQueries()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var model = new ModelUpsert
                 {
@@ -344,7 +344,7 @@ namespace Ptixed.Sql.Tests.SqlServer
         [Fact]
         public void TestFormattableStringWithinFormattableString()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var model = new ModelUpsert
                 {
@@ -368,7 +368,7 @@ namespace Ptixed.Sql.Tests.SqlServer
         [Fact]
         public void TestIEnumerable()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var s = "2";
                 var q1 = new Query($"1");
@@ -384,7 +384,7 @@ namespace Ptixed.Sql.Tests.SqlServer
         [InlineData(10)]
         public void TestBulkInsert(int n)
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var data = new List<Model2>();
                 for (var i = 0; i < n; ++i)

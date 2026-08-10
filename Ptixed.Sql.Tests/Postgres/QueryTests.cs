@@ -21,14 +21,14 @@ namespace Ptixed.Sql.Tests.Postgres
 
         public void Dispose()
         {
-            using (var db = _db.OpenConnection())
-                db.NonQuery($@"DELETE FROM ""Model""");
+            var db = _db.CreateDatabase();
+            db.NonQuery($@"DELETE FROM ""Model""");
         }
 
         [Fact]
         public void TestQueries()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var model = new Model
                 {
@@ -68,7 +68,7 @@ namespace Ptixed.Sql.Tests.Postgres
         [Fact]
         public void TestRelations()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var model = db.Insert(new Model
                 {
@@ -101,7 +101,7 @@ namespace Ptixed.Sql.Tests.Postgres
         [Fact]
         public void TestTransactions()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var model = new Model
                 {
@@ -129,7 +129,7 @@ namespace Ptixed.Sql.Tests.Postgres
         [Fact]
         public void TestScalarQueries()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var model = new Model
                 {
@@ -157,7 +157,7 @@ namespace Ptixed.Sql.Tests.Postgres
         [Fact]
         public void TestModelWithNoPk()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var model = new ModelWithNoPk
                 {
@@ -190,7 +190,7 @@ namespace Ptixed.Sql.Tests.Postgres
         [Fact]
         public void TestDictionaryResult()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var model = new Model
                 {
@@ -213,7 +213,7 @@ namespace Ptixed.Sql.Tests.Postgres
         [Fact]
         public void TestTuples()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 var model = db.Insert(new Model
                 {
@@ -243,7 +243,7 @@ namespace Ptixed.Sql.Tests.Postgres
         [Fact]
         public void TestAffectedRows()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
             {
                 db.Insert(new Model2
                 {
@@ -267,7 +267,7 @@ namespace Ptixed.Sql.Tests.Postgres
         [Fact]
         public void TestListInsert()
         {
-            using (var db = _db.OpenConnection())
+            var db = _db.CreateDatabase();
                 Assert.Throws<PostgresException>(() =>
                     db.Insert(new List<Model2>
                     {

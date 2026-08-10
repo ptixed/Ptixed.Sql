@@ -31,8 +31,9 @@ namespace Ptixed.Sql.SqlServer
                     row[name] = value;
                 payload.Rows.Add(row);
             }
-
-            using (var bcp = new SqlBulkCopy(Connection.Value))
+            
+            using (var connection = Connect())
+            using (var bcp = new SqlBulkCopy(connection))
             {
                 foreach (var column in columns)
                     bcp.ColumnMappings.Add(column.Name, column.Name);

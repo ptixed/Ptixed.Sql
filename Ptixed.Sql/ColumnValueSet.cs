@@ -29,7 +29,7 @@ namespace Ptixed.Sql
         public ColumnValueSet(Range<ColumnValue> values)
         {
             _values = values;
-            _dict = new Lazy<Dictionary<string, object>>(() => _values.ToDictionary(x => x.Name, x => x.Value), LazyThreadSafetyMode.None);
+            _dict = new Lazy<Dictionary<string, object>>(() => _values.ToDictionary(x => x.Name, x => x.Value));
         }
 
         public ColumnValueSet(DbDataReader reader)
@@ -39,7 +39,7 @@ namespace Ptixed.Sql
                 values[i] = new ColumnValue(reader.GetName(i), reader.GetValue(i));
 
             _values = new Range<ColumnValue>(values);
-            _dict = new Lazy<Dictionary<string, object>>(() => _values.ToDictionary(x => x.Name, x => x.Value), LazyThreadSafetyMode.None);
+            _dict = new Lazy<Dictionary<string, object>>(() => _values.ToDictionary(x => x.Name, x => x.Value));
         }
 
         public ColumnValueSet GetRange(int index, int count)
