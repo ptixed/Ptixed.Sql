@@ -7,19 +7,14 @@ using System.Threading;
 
 namespace Ptixed.Sql.Impl
 {
-    /// <summary>
-    /// This class is not thread safe
-    /// </summary>
     public abstract class Database<TConnection, TCommand, TParameter> : IDatabase<TParameter>
         where TConnection : DbConnection, new()
         where TParameter : DbParameter, new()
         where TCommand : DbCommand, new()
     {
-        private DbTransaction _transaction;
-        private IDisposable _result;
+        private (TConnection Connection, DbTransaction Transaction)? _transaction;
 
         public readonly ConnectionConfig Config;
-        public Lazy<TConnection> Connection;
 
         public readonly DiagnosticsClass Diagnostics = new DiagnosticsClass();
 
@@ -27,53 +22,31 @@ namespace Ptixed.Sql.Impl
 
         public class DiagnosticsClass
         {
-            public TCommand LastCommand;
+            public SqlCommandWrapper<TConnection, TCommand> LastCommand;
         }
 
         public Database(ConnectionConfig config)
         {
             Config = config;
-            Reset();
+        }
+        
+        protected TConnection Connect()
+        {
+            if (_transaction != null)
+                return _transaction.Value.Connection;
+            
+            var connection = new TConnection();
+            connection.ConnectionString = Config.ConnectionString;
+            connection.Open();
+            
+            return connection;
         }
 
-        private TCommand NewCommand()
+        private SqlCommandWrapper<TConnection, TCommand> CreateWrapperCommand()
         {
-            try { _result?.Dispose(); }
-            catch { /* don't care */ }
-            
-            var command = new TCommand()
-            {
-                Connection = Connection.Value,
-                Transaction = _transaction,
-                CommandTimeout = (int)Config.CommandTimeout.TotalSeconds,
-            };
+            var command = new SqlCommandWrapper<TConnection, TCommand>(_transaction?.Connection ?? Connect(), _transaction?.Transaction, Config.CommandTimeout);
             Diagnostics.LastCommand = command;
             return command;
-        }
-
-        public void Dispose()
-        {
-            try { _result?.Dispose(); }
-            catch { /* don't care */ }
-
-            try { _transaction?.Dispose(); }
-            catch { /* don't care */ }
-
-            if (Connection?.IsValueCreated == true)
-                try { Connection.Value.Dispose(); }
-                catch { /* don't care */ }
-        }
-
-        public void Reset()
-        {
-            Dispose();
-            Connection = new Lazy<TConnection>(() =>
-            {
-                var sql = new TConnection(); 
-                sql.ConnectionString =  Config.ConnectionString;
-                sql.Open();
-                return sql;
-            }, LazyThreadSafetyMode.None);
         }
 
         public int NonQuery(params Query<TParameter>[] query)
@@ -81,17 +54,20 @@ namespace Ptixed.Sql.Impl
             if (query.Length == 0)
                 return 0;
 
-            var command = query.Aggregate((x, y) => x.Append($";\n\n").Append(y)).ToSql(NewCommand(), Config.Mappping);
-            return command.ExecuteNonQuery();
+            using (var wrapper = CreateWrapperCommand())
+            {
+                var command = query.Aggregate((x, y) => x.Append($";\n\n").Append(y)).ToSql(wrapper.Command, Config.Mappping);
+                return command.ExecuteNonQuery();
+            }
         }
 
         public IEnumerable<T> Query<T>(Query<TParameter> query, params Type[] types)
         {
-            var command = query.ToSql(NewCommand(), Config.Mappping);
-
-            var ret = new QueryResult<T>(Config.Mappping, command.ExecuteReader(), types);
-            _result = ret;
-            return ret;
+            using (var wrapper = CreateWrapperCommand())
+            {
+                var command = query.ToSql(wrapper.Command, Config.Mappping);
+                return new QueryResult<T>(Config.Mappping, command.ExecuteReader(), types);
+            }
         }
 
         public IDatabaseTransaction OpenTransaction(IsolationLevel isolation)
@@ -110,7 +86,16 @@ namespace Ptixed.Sql.Impl
             public DatabaseTransaction(Database<TConnection, TCommand, TParameter> db, IsolationLevel isolation)
             {
                 _db = db;
-                _db._transaction = db.Connection.Value.BeginTransaction(isolation);
+                var connection = db.Connect();
+                try
+                {
+                    _db._transaction = (connection, connection.BeginTransaction(isolation));
+                }
+                catch
+                {
+                    connection.Dispose();
+                    throw;
+                }
             }
 
             public void Commit()
@@ -118,7 +103,7 @@ namespace Ptixed.Sql.Impl
                 if (_rolledback)
                     throw PtixedException.InvalidTransacionState("rolled back");
                 if (!_commited)
-                    _db._transaction.Commit();
+                    _db._transaction.Value.Transaction.Commit();
                 _commited = true;
             }
 
@@ -126,13 +111,13 @@ namespace Ptixed.Sql.Impl
             {
                 if (!_commited)
                 {
-                    try { _db._transaction?.Rollback(); }
+                    try { _db._transaction?.Transaction?.Rollback(); }
                     catch { /* don't care */ }
                     _rolledback = true;
                 }
 
-                try { _db._transaction?.Dispose(); }
-                catch { /* don't care */ }
+                _db._transaction?.Transaction?.Dispose();
+                _db._transaction?.Connection?.Dispose();
                 
                 _db._transaction = null;
             }

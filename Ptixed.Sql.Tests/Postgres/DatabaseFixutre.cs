@@ -10,7 +10,7 @@ namespace Ptixed.Sql.Tests.Postgres
 
         public DatabaseFixture()
         {
-            using (var db = OpenConnection())
+            var db = CreateDatabase();
             {
                 var drop1 = new Query($@"drop table if exists ""Model""");
                 var create1 = new Query($@"create table ""Model""
@@ -46,10 +46,10 @@ namespace Ptixed.Sql.Tests.Postgres
 
         public void Dispose()
         {
-            using (var db = OpenConnection())
-                db.NonQuery(new Query($@"drop table ""Model""; drop table ""Model2""; drop table ""ModelUpsert"";"));
+            var db = CreateDatabase();
+            db.NonQuery(new Query($@"drop table ""Model""; drop table ""Model2""; drop table ""ModelUpsert"";"));
         }
 
-        public Database OpenConnection() => new Database(_config);
+        public Database CreateDatabase() => new Database(_config);
     }
 }

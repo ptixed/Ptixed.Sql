@@ -5,7 +5,7 @@ using System.Data.Common;
 
 namespace Ptixed.Sql
 {
-    public interface IDatabase<TParameter> : IDisposable
+    public interface IDatabase<TParameter>
         where TParameter : DbParameter, new()
     {
         MappingConfig MappingConfig { get; }
@@ -14,7 +14,5 @@ namespace Ptixed.Sql
         int NonQuery(params Query<TParameter>[] query);
 
         IDatabaseTransaction OpenTransaction(IsolationLevel isolation);
-
-        void Reset();
     }
 }
