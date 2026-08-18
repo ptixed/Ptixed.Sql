@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
+﻿using System.Data;
 using System.Data.Common;
 
 namespace Ptixed.Sql
 {
-    public interface IDatabase<TParameter>
+    public interface IDatabase<TParameter> : IDatabaseAccessor<TParameter>
         where TParameter : DbParameter, new()
     {
         MappingConfig MappingConfig { get; }
 
-        IEnumerable<T> Query<T>(Query<TParameter> query, params Type[] types);
-        int NonQuery(params Query<TParameter>[] query);
-
-        IDatabaseTransaction OpenTransaction(IsolationLevel isolation);
+        IDatabaseTransaction<TParameter> OpenTransaction(IsolationLevel isolation);
     }
 }
