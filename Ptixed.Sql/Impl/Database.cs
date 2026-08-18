@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
-using System.Threading;
 
 namespace Ptixed.Sql.Impl
 {
@@ -12,10 +11,7 @@ namespace Ptixed.Sql.Impl
         where TParameter : DbParameter, new()
         where TCommand : DbCommand, new()
     {
-        private (TConnection Connection, DbTransaction Transaction)? _transaction;
-
         public readonly ConnectionConfig Config;
-
         public readonly DiagnosticsClass Diagnostics = new DiagnosticsClass();
 
         public MappingConfig MappingConfig => Config.Mappping;
@@ -25,16 +21,13 @@ namespace Ptixed.Sql.Impl
             public SqlCommandWrapper<TConnection, TCommand> LastCommand;
         }
 
-        public Database(ConnectionConfig config)
+        protected Database(ConnectionConfig config)
         {
             Config = config;
         }
         
         protected TConnection Connect()
         {
-            if (_transaction != null)
-                return _transaction.Value.Connection;
-            
             var connection = new TConnection();
             connection.ConnectionString = Config.ConnectionString;
             connection.Open();
@@ -42,58 +35,62 @@ namespace Ptixed.Sql.Impl
             return connection;
         }
 
-        private SqlCommandWrapper<TConnection, TCommand> CreateWrapperCommand()
+        private SqlCommandWrapper<TConnection, TCommand> CreateWrapperCommand(TConnection connection, DbTransaction transaction)
         {
-            var command = new SqlCommandWrapper<TConnection, TCommand>(_transaction?.Connection ?? Connect(), _transaction?.Transaction, Config.CommandTimeout);
+            var command = new SqlCommandWrapper<TConnection, TCommand>(connection ?? Connect(), transaction, Config.CommandTimeout);
             Diagnostics.LastCommand = command;
             return command;
         }
 
-        public int NonQuery(params Query<TParameter>[] query)
+        private int NonQueryInternal(TConnection connection, DbTransaction transaction, params Query<TParameter>[] query)
         {
             if (query.Length == 0)
                 return 0;
 
-            using (var wrapper = CreateWrapperCommand())
+            using (var wrapper = CreateWrapperCommand(connection, transaction))
             {
                 var command = query.Aggregate((x, y) => x.Append($";\n\n").Append(y)).ToSql(wrapper.Command, Config.Mappping);
                 return command.ExecuteNonQuery();
             }
         }
+        public int NonQuery(params Query<TParameter>[] query) => NonQueryInternal(null, null, query);
 
-        public IEnumerable<T> Query<T>(Query<TParameter> query, params Type[] types)
+        private IEnumerable<T> QueryInternal<T>(TConnection connection, DbTransaction transaction, Query<TParameter> query, params Type[] types)
         {
-            using (var wrapper = CreateWrapperCommand())
+            using (var wrapper = CreateWrapperCommand(connection, transaction))
             {
                 var command = query.ToSql(wrapper.Command, Config.Mappping);
                 return new QueryResult<T>(Config.Mappping, command.ExecuteReader(), types);
             }
         }
+        public IEnumerable<T> Query<T>(Query<TParameter> query, params Type[] types) => QueryInternal<T>(null, null, query, types);
 
-        public IDatabaseTransaction OpenTransaction(IsolationLevel isolation)
+        public IDatabaseTransaction<TParameter> OpenTransaction(IsolationLevel isolation)
         {
-            if (_transaction != null)
-                throw PtixedException.InvalidTransacionState("open"); 
             return new DatabaseTransaction(this, isolation);
         }
         
-        private class DatabaseTransaction : IDatabaseTransaction
+        private class DatabaseTransaction : IDatabaseTransaction<TParameter>
         {
             private readonly Database<TConnection, TCommand, TParameter> _db;
+            
+            private readonly TConnection _connection;
+            private readonly DbTransaction _transaction;
+            
             private bool _commited;
             private bool _rolledback;
 
             public DatabaseTransaction(Database<TConnection, TCommand, TParameter> db, IsolationLevel isolation)
             {
                 _db = db;
-                var connection = db.Connect();
+                _connection = db.Connect();
                 try
                 {
-                    _db._transaction = (connection, connection.BeginTransaction(isolation));
+                    _transaction = _connection.BeginTransaction(isolation);
                 }
                 catch
                 {
-                    connection.Dispose();
+                    _connection.Dispose();
                     throw;
                 }
             }
@@ -103,23 +100,31 @@ namespace Ptixed.Sql.Impl
                 if (_rolledback)
                     throw PtixedException.InvalidTransacionState("rolled back");
                 if (!_commited)
-                    _db._transaction.Value.Transaction.Commit();
+                    _transaction.Commit();
                 _commited = true;
             }
 
             public void Dispose()
             {
-                if (!_commited)
+                if (!_commited && !_rolledback)
                 {
-                    try { _db._transaction?.Transaction?.Rollback(); }
+                    try { _transaction?.Rollback(); }
                     catch { /* don't care */ }
                     _rolledback = true;
                 }
 
-                _db._transaction?.Transaction?.Dispose();
-                _db._transaction?.Connection?.Dispose();
-                
-                _db._transaction = null;
+                _transaction?.Dispose();
+                _connection?.Dispose();
+            }
+
+            IEnumerable<T> IDatabaseAccessor<TParameter>.Query<T>(Query<TParameter> query, params Type[] types)
+            {
+                return _db.QueryInternal<T>(_connection, _transaction, query, types);
+            }
+
+            int IDatabaseAccessor<TParameter>.NonQuery(params Query<TParameter>[] query)
+            {
+                return _db.NonQueryInternal(_connection, _transaction, query);
             }
         }
     }

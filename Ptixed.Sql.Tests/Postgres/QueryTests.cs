@@ -113,13 +113,13 @@ namespace Ptixed.Sql.Tests.Postgres
 
                 using (var tran = db.OpenTransaction(IsolationLevel.Serializable))
                 {
-                    db.Insert(model);
+                    tran.Insert(model);
                 }
                 Assert.Null(db.GetById<Model>(model.Id));
 
                 using (var tran = db.OpenTransaction(IsolationLevel.Serializable))
                 {
-                    db.Insert(model);
+                    tran.Insert(model);
                     tran.Commit();
                 }
                 Assert.NotNull(db.GetById<Model>(model.Id));
